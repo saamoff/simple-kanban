@@ -1,3 +1,6 @@
+<script setup>
+import ModalContainer from './ModalContainer.vue'
+</script>
 <template>
   <ModalContainer
     title="New Task"
@@ -30,7 +33,6 @@
             class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2"
           >
             <option value="">Select a project</option>
-            <!-- Add project options here -->
           </select>
         </div>
         <div>
@@ -40,7 +42,6 @@
             multiple
             class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
           >
-            <!-- Add collaborator options here -->
           </select>
         </div>
       </form>
@@ -53,16 +54,3 @@
     </div>
   </ModalContainer>
 </template>
-
-<script>
-import ModalContainer from './ModalContainer.vue'
-export default {
-  components: {
-    ModalContainer,
-  },
-}
-</script>
-
-<style>
-
-</style>

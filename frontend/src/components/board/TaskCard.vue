@@ -1,3 +1,44 @@
+<script setup>
+import { ref } from 'vue'
+import { UserGroupIcon, ClockIcon } from '@heroicons/vue/24/outline'
+import TaskInfoModal from '../modals/TaskInfoModal.vue'
+
+const props = defineProps({
+  title: {
+    type: String,
+    required: true,
+  },
+  project: {
+    type: String,
+    required: true,
+  },
+  description: {
+    type: String,
+    required: true,
+  },
+  collaborators: {
+    type: Array,
+    default: () => [],
+  },
+  timeSpent: {
+    type: String,
+    default: '0h 0m',
+  },
+  status: {
+    type: String,
+    required: true,
+  },
+})
+
+const emit = defineEmits(['update:collaborators', 'dragstart'])
+
+const onDragStart = () => {
+  emit('dragstart', props.task)
+}
+
+const showTooltip = ref(false)
+const isModalOpen = ref(false)
+</script>
 <template>
   <div draggable="true" @dragstart="onDragStart">
     <button
@@ -10,7 +51,7 @@
           {{ title }}
         </h2>
 
-        <span class="px-2 py-1 text-sm font-bold text-blue-500 border border-blue-500 rounded-lg">
+        <span class="px-2 py-1 text-sm font-bold text-blue-500 border border-blue-500 rounded-lg hidden sm:block">
           {{ project }}
         </span>
       </div>
@@ -64,66 +105,11 @@
     <TaskInfoModal
       v-if="isModalOpen"
       :title="title"
-      :project="project"
       :description="description"
       :collaborators="collaborators"
       :time-spent="timeSpent"
       :status="status"
       @close="isModalOpen = false"
-      @addCollaborator="addCollaborator"
-      @removeCollaborator="removeCollaborator"
     />
   </div>
 </template>
-
-<script setup>
-import { ref } from 'vue'
-import { UserGroupIcon, ClockIcon } from '@heroicons/vue/24/outline'
-import TaskInfoModal from './modals/TaskInfoModal.vue'
-
-const props = defineProps({
-  title: {
-    type: String,
-    required: true,
-  },
-  project: {
-    type: String,
-    required: true,
-  },
-  description: {
-    type: String,
-    required: true,
-  },
-  collaborators: {
-    type: Array,
-    default: () => [],
-  },
-  timeSpent: {
-    type: String,
-    default: '0h 0m',
-  },
-  status: {
-    type: String,
-    required: true,
-  },
-})
-
-const emit = defineEmits(['update:collaborators', 'dragstart'])
-
-const onDragStart = () => {
-  emit('dragstart', props.task)
-}
-
-const showTooltip = ref(false)
-const isModalOpen = ref(false)
-
-const addCollaborator = (collaborator) => {
-  const updated = [...props.collaborators, collaborator]
-  emit('update:collaborators', updated)
-}
-
-const removeCollaborator = (collaborator) => {
-  const updated = props.collaborators.filter((c) => c !== collaborator)
-  emit('update:collaborators', updated)
-}
-</script>

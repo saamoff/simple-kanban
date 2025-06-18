@@ -15,6 +15,7 @@ coverage
 *.local
 
 package-lock.json
+.env
 
 /cypress/videos/
 /cypress/screenshots/

@@ -1,16 +1,9 @@
 <template>
-  <ModalContainer
-    title="Filters"
-  >
-    <div class="space-y-4">
-      <ProjectFilter />
-      <CollaboratorFilter />
-    </div>
-  </ModalContainer>
+  <ModalContainer title="Filters"> </ModalContainer>
 </template>
 
 <script>
-import ModalContainer from './ModalContainer.vue';
+import ModalContainer from './ModalContainer.vue'
 
 export default {
   components: {

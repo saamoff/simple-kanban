@@ -1,9 +1,7 @@
 <script setup>
-import BoardContainer from '@/components/BoardContainer.vue'
+import BoardContainer from '../components/board/BoardContainer.vue'
 </script>
 
 <template>
-  <main class="px-4">
-    <BoardContainer />
-  </main>
+  <BoardContainer />
 </template>

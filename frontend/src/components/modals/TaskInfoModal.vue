@@ -1,3 +1,46 @@
+<script setup>
+import { ref } from 'vue'
+import ModalContainer from './ModalContainer.vue'
+import AppButton from '../ui/AppButton.vue'
+import api from "@/services/api.js"
+
+const isEditMode = ref(false)
+
+const props = defineProps({
+  title: {
+    type: String,
+    required: true,
+  },
+  description: {
+    type: String,
+    required: true,
+  },
+  id: {
+    type: [String, Number],
+    required: true,
+  }
+})
+
+const emit = defineEmits(['saveChanges', 'removeTask'])
+
+const saveChanges = async () => {
+  try {
+    await api.tasks.updateTask(props.id)
+    emit('saveChanges')
+  } catch (error) {
+    console.error("Failed to save changes:", error)
+  }
+}
+
+const removeTask = async () => {
+  try {
+    await api.tasks.deleteTask(props.id)
+    emit('removeTask')
+  } catch (error) {
+    console.error("Failed to remove task:", error)
+  }
+}
+</script>
 <template>
   <ModalContainer
     :title="title"
@@ -11,72 +54,31 @@
       />
       <TimeRegister />
     </div>
-    <div class="w-full mt-10">
-      <button
+    <div class="w-full flex gap-2">
+      <AppButton
         v-if="!isEditMode"
-        class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 cursor-pointer w-[48%] sm:w-[49%]"
+        title="Edit Task"
+        btnClass="primary"
         @click="isEditMode = true"
-      >
-        Edit Task
-      </button>
-      <button
+      />
+      <AppButton
         v-if="!isEditMode"
-        class="text-red-500 border-1 px-4 py-2 rounded hover:bg-red-50 ml-2 cursor-pointer w-[48%] sm:w-[49%]"
-        @click="$emit('removeTask')"
-      >
-        Remove Task
-      </button>
-      <button
+        title="Remove Task"
+        btnClass="tertiary"
+        @click="removeTask"
+      />
+      <AppButton
         v-if="isEditMode"
-        class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 cursor-pointer w-[48%] sm:w-[49%]"
-        @click="$emit('saveChanges')"
-      >
-        Save Changes
-      </button>
-      <button
+        title="Save Changes"
+        btnClass="primary"
+        @click="saveChanges"
+      />
+      <AppButton
         v-if="isEditMode"
-        class="text-gray-500 border-1 px-4 py-2 rounded hover:bg-gray-50 ml-2 cursor-pointer w-[48%] sm:w-[49%]"
+        title="Cancel Changes"
+        btnClass="secondary"
         @click="isEditMode = false"
-      >
-        Cancel
-      </button>
+      />
     </div>
   </ModalContainer>
 </template>
-
-<script>
-import AddCollaborator from '../AddCollaborator.vue'
-import TimeRegister from '../TimeRegister.vue'
-import ModalContainer from './ModalContainer.vue'
-export default {
-  data() {
-    return {
-      isEditMode: false,
-    }
-  },
-  components: {
-    AddCollaborator,
-    TimeRegister,
-    ModalContainer,
-  },
-  props: {
-    title: String,
-    description: String,
-    collaborators: Array,
-  },
-  setup(_, { emit }) {
-    const addCollaboratorEmit = (collaborator) => {
-      emit('addCollaborator', collaborator)
-    }
-
-    const removeCollaboratorEmit = (collaborator) => {
-      emit('removeCollaborator', collaborator)
-    }
-
-    return {
-      addCollaboratorEmit,
-      removeCollaboratorEmit,
-    }
-  },
-}
-</script>

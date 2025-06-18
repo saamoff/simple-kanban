@@ -1,80 +1,119 @@
-// stores/taskStore.ts
 import { defineStore } from 'pinia'
-import axios from 'axios'
+import api from "../services/api.js"
+import type { Task } from '../types/task'
 
-interface Task {
-  id: string
-  title: string
-  description: string
-  project: string
-  collaborators: string[]
-  status: 'todo' | 'inprogress' | 'finished'
-  // Add other task properties as needed
+interface TaskState {
+  tasks: Task[]
+  currentTask: Task | null
+  isLoading: boolean
+  error: string | null
 }
 
-interface Collaborator {
-  name: string
-  // Add other collaborator properties
-}
-
-export const useTaskStore = defineStore('taskStore', {
-  state: () => ({
-    tasks: [] as Task[],
-    selectedProjects: [] as string[],
-    selectedCollaborator: null as Collaborator | null,
-    collapsedProjects: [] as string[],
-    selectedStatus: null as string | null,
+export const useTaskStore = defineStore('task', {
+  state: (): TaskState => ({
+    tasks: [],
+    currentTask: null,
+    isLoading: false,
+    error: null
   }),
 
-  getters: {
-    projects(state): string[] {
-      return Array.from(new Set(state.tasks.map((t) => t.project)))
-    },
-
-    filteredProjects(state): string[] {
-      if (!state.selectedCollaborator) return this.projects
-      return this.projects.filter((project) =>
-        state.tasks.some(
-          (task) =>
-            task.project === project &&
-            task.collaborators.includes(state.selectedCollaborator!.name),
-        ),
-      )
-    },
-
-    tasksByProject: (state) => (project: string) => {
-      return state.tasks.filter((t) => {
-        const matchesProject = t.project === project
-        const matchesCollaborator =
-          !state.selectedCollaborator || t.collaborators.includes(state.selectedCollaborator.name)
-        const matchesStatus = state.selectedStatus ? t.status === state.selectedStatus : true
-        return matchesProject && matchesCollaborator && matchesStatus
-      })
-    },
-  },
-
   actions: {
-    async fetchTasks() {
+    async fetchTasks(projectId?: string) {
+      this.isLoading = true
       try {
-        const response = await axios.get<Task[]>('/api/tasks')
+        const response = projectId 
+          ? await api.projects.getProjectTasks(projectId)
+          : await api.tasks.getTasks()
         this.tasks = response.data
-      } catch (error) {
-        console.error('Failed to fetch tasks:', error)
-        throw error // Re-throw for component error handling
+      } catch (err) {
+        this.error = err.message || 'Failed to fetch tasks'
+      } finally {
+        this.isLoading = false
       }
     },
 
-    toggleCollapse(project: string) {
-      this.collapsedProjects = this.collapsedProjects.includes(project)
-        ? this.collapsedProjects.filter((p) => p !== project)
-        : [...this.collapsedProjects, project]
-    },
-
-    updateTaskCollaborators(taskId: string, collaborators: string[]) {
-      const task = this.tasks.find((t) => t.id === taskId)
-      if (task) {
-        task.collaborators = collaborators
+    async fetchTask(id: string) {
+      this.isLoading = true
+      try {
+        const response = await api.tasks.getTask(id)
+        this.currentTask = response.data
+      } catch (err) {
+        this.error = err.message || 'Failed to fetch task'
+      } finally {
+        this.isLoading = false
       }
     },
+
+    async createTask(taskData: Omit<Task, '_id' | 'createdAt' | 'updatedAt'>) {
+      this.isLoading = true
+      try {
+        const response = await api.tasks.createTask(taskData)
+        this.tasks.push(response.data)
+        return response.data
+      } catch (err) {
+        this.error = err.message || 'Failed to create task'
+        throw err
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async updateTask(id: string, updateData: Partial<Task>) {
+      this.isLoading = true
+      try {
+        const response = await api.tasks.updateTask(id)
+        const index = this.tasks.findIndex(t => t._id === id)
+        if (index !== -1) {
+          this.tasks[index] = response.data
+        }
+        if (this.currentTask?._id === id) {
+          this.currentTask = response.data
+        }
+        return response.data
+      } catch (err) {
+        this.error = err.message || 'Failed to update task'
+        throw err
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async deleteTask(id: string) {
+      this.isLoading = true
+      try {
+        await api.tasks.deleteTask(id)
+        this.tasks = this.tasks.filter(t => t._id !== id)
+        if (this.currentTask?._id === id) {
+          this.currentTask = null
+        }
+      } catch (err) {
+        this.error = err.message || 'Failed to delete task'
+        throw err
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async addCollaborator(taskId: string, collaboratorId: string) {
+      try {
+        await api.tasks.associateCollaborator(taskId, collaboratorId)
+        const task = this.tasks.find(t => t._id === taskId)
+        if (task && !task.collaborators.includes(collaboratorId)) {
+          task.collaborators.push(collaboratorId)
+        }
+      } catch (err) {
+        this.error = err.message || 'Failed to add collaborator'
+        throw err
+      }
+    }
   },
+
+  getters: {
+    getTasksByStatus: (state) => (status: Task['status']) => {
+      return state.tasks.filter(task => task.status === status)
+    },
+    getTaskById: (state) => (id: string) => {
+      return state.tasks.find(task => task._id === id)
+    }
+  }
 })
