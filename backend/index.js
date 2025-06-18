@@ -1,6 +1,7 @@
 require('dotenv').config()
 const express = require("express");
 const mongoose = require("mongoose");
+const cors = require('cors')
 const app = express();
 
 const taskRoute = require("./src/routes/task.route.js")
@@ -10,6 +11,7 @@ const authRoute = require("./src/routes/auth.route.js")
 
 app.use(express.json());
 app.use(express.urlencoded({extended: false}));
+app.use(cors())
 
 app.use("/api/tasks", taskRoute);
 app.use("/api/projects", projectRoute);
