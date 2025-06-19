@@ -8,8 +8,3 @@ export interface Task {
   createdAt: string
   updatedAt: string
 }
-
-export interface Collaborator {
-  _id: string
-  name: string
-}

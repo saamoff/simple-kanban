@@ -5,7 +5,7 @@ defineProps({
     required: true,
   },
   icon: {
-    type: Object,
+    type: Function,
     required: false,
   },
   btnClass: {
@@ -19,6 +19,11 @@ defineProps({
     default: 'normal',
     validator: (value) => ['small', 'normal', 'large'].includes(value),
   },
+  disabled: {
+    type: Boolean,
+    required: false,
+    default: false,
+  },
 })
 
 const emit = defineEmits(['click'])
@@ -27,6 +32,8 @@ const emit = defineEmits(['click'])
 <template>
   <button
     @click="emit('click')"
+    v-bind="$attrs"
+    :disabled="disabled"
     class="w-full justify-center items-center mt-2 sm:mt-0 cursor-pointer px-4 py-1 transition-colors duration-200 rounded-md flex gap-2 font-semibold"
     :class="[
       {
@@ -35,6 +42,7 @@ const emit = defineEmits(['click'])
         'text-blue-500 bg-white hover:bg-blue-50 border-2 border-offset-0':
           btnClass === 'secondary',
         'text-red-500 bg-transparent hover:bg-red-50 border-2': btnClass === 'tertiary',
+        'opacity-50 cursor-not-allowed': disabled,
       },
       {
         'px-2 py-1 text-sm': size === 'small',
@@ -42,7 +50,6 @@ const emit = defineEmits(['click'])
         'px-6 py-3 text-lg': size === 'large',
       },
     ]"
-    v-bind="$attrs"
   >
     <span v-if="icon" class="h-5 w-5">
       <component :is="icon" />

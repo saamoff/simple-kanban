@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
+const Collaborator = require('../models/collaborator.model')
 
 const register = async (req, res, next) => {
   try {
@@ -18,6 +19,19 @@ const register = async (req, res, next) => {
     const user = await User.create({
       username,
       password
+    });
+
+    res.status(201).json({
+      user: {
+        id: user._id,
+        username: user.username
+      },
+      token
+    });
+
+    await Collaborator.create({
+      name: username,
+      user: user._id
     });
 
     const token = generateJwtToken(user);

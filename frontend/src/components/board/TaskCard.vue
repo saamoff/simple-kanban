@@ -4,6 +4,10 @@ import { UserGroupIcon, ClockIcon } from '@heroicons/vue/24/outline'
 import TaskInfoModal from '../modals/TaskInfoModal.vue'
 
 const props = defineProps({
+  id: {
+    type: [String, Number],
+    required: true,
+  },
   title: {
     type: String,
     required: true,
@@ -51,7 +55,9 @@ const isModalOpen = ref(false)
           {{ title }}
         </h2>
 
-        <span class="px-2 py-1 text-sm font-bold text-blue-500 border border-blue-500 rounded-lg hidden sm:block">
+        <span
+          class="px-2 py-1 text-sm font-bold text-blue-500 border border-blue-500 rounded-lg hidden sm:block"
+        >
           {{ project }}
         </span>
       </div>
@@ -69,9 +75,7 @@ const isModalOpen = ref(false)
           >
             <UserGroupIcon class="w-4 h-4 mr-1" />
             {{ collaborators.length }}
-            <span class="hidden sm:block">
-              &nbsp;Collaborators
-            </span>
+            <span class="hidden sm:block"> &nbsp;Collaborators </span>
           </span>
 
           <Transition
@@ -97,19 +101,22 @@ const isModalOpen = ref(false)
 
         <span class="inline-flex items-center text-xs text-gray-500">
           <ClockIcon class="w-4 h-4 mr-1" />
-            <span class="hidden sm:block">Time Spent:&nbsp;</span>{{ timeSpent }}
+          <span class="hidden sm:block">Time Spent:&nbsp;</span>{{ timeSpent }}
         </span>
       </div>
     </button>
 
     <TaskInfoModal
       v-if="isModalOpen"
+      :id="id"
       :title="title"
       :description="description"
       :collaborators="collaborators"
       :time-spent="timeSpent"
       :status="status"
       @close="isModalOpen = false"
+      @removeTask="$emit('removeTask')"
+      @saveChanges="$emit('removeTask')"
     />
   </div>
 </template>

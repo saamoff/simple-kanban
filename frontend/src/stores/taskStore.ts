@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import api from "../services/api.js"
+import api from '../services/api.js'
 import type { Task } from '../types/task'
 
 interface TaskState {
@@ -14,14 +14,14 @@ export const useTaskStore = defineStore('task', {
     tasks: [],
     currentTask: null,
     isLoading: false,
-    error: null
+    error: null,
   }),
 
   actions: {
     async fetchTasks(projectId?: string) {
       this.isLoading = true
       try {
-        const response = projectId 
+        const response = projectId
           ? await api.projects.getProjectTasks(projectId)
           : await api.tasks.getTasks()
         this.tasks = response.data
@@ -47,7 +47,14 @@ export const useTaskStore = defineStore('task', {
     async createTask(taskData: Omit<Task, '_id' | 'createdAt' | 'updatedAt'>) {
       this.isLoading = true
       try {
-        const response = await api.tasks.createTask(taskData)
+        const payload = {
+          title: taskData.title || '',
+          description: taskData.description || '',
+          project: taskData.project || null,
+          collaborators: Array.isArray(taskData.collaborators) ? [...taskData.collaborators] : [],
+        }
+
+        const response = await api.tasks.createTask(payload)
         this.tasks.push(response.data)
         return response.data
       } catch (err) {
@@ -61,8 +68,8 @@ export const useTaskStore = defineStore('task', {
     async updateTask(id: string, updateData: Partial<Task>) {
       this.isLoading = true
       try {
-        const response = await api.tasks.updateTask(id)
-        const index = this.tasks.findIndex(t => t._id === id)
+        const response = await api.tasks.updateTask(id, updateData)
+        const index = this.tasks.findIndex((t) => t._id === id)
         if (index !== -1) {
           this.tasks[index] = response.data
         }
@@ -82,7 +89,7 @@ export const useTaskStore = defineStore('task', {
       this.isLoading = true
       try {
         await api.tasks.deleteTask(id)
-        this.tasks = this.tasks.filter(t => t._id !== id)
+        this.tasks = this.tasks.filter((t) => t._id !== id)
         if (this.currentTask?._id === id) {
           this.currentTask = null
         }
@@ -97,7 +104,7 @@ export const useTaskStore = defineStore('task', {
     async addCollaborator(taskId: string, collaboratorId: string) {
       try {
         await api.tasks.associateCollaborator(taskId, collaboratorId)
-        const task = this.tasks.find(t => t._id === taskId)
+        const task = this.tasks.find((t) => t._id === taskId)
         if (task && !task.collaborators.includes(collaboratorId)) {
           task.collaborators.push(collaboratorId)
         }
@@ -105,15 +112,15 @@ export const useTaskStore = defineStore('task', {
         this.error = err.message || 'Failed to add collaborator'
         throw err
       }
-    }
+    },
   },
 
   getters: {
     getTasksByStatus: (state) => (status: Task['status']) => {
-      return state.tasks.filter(task => task.status === status)
+      return state.tasks.filter((task) => task.status === status)
     },
     getTaskById: (state) => (id: string) => {
-      return state.tasks.find(task => task._id === id)
-    }
-  }
+      return state.tasks.find((task) => task._id === id)
+    },
+  },
 })

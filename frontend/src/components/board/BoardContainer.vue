@@ -1,6 +1,7 @@
 <script setup>
 import ProjectCard from './ProjectCard.vue'
 import AppHeader from '../ui/AppHeader.vue'
+import CreateEditProjects from '../shared/CreateEditProjects.vue'
 </script>
 
 <template>
@@ -9,5 +10,8 @@ import AppHeader from '../ui/AppHeader.vue'
       <AppHeader />
     </div>
     <ProjectCard />
+    <div>
+      <CreateEditProjects />
+    </div>
   </section>
 </template>

@@ -48,13 +48,14 @@ const updateProject = async (req, res) => {
 const deleteProject = async (req, res) => {
   try {
     const { id } = req.params;
+    await Task.deleteMany({ project: id });
     const project = await Project.findByIdAndDelete(id);
 
-    if(!project) {
-      return res.status(404).json({message: "Project not found."})
+    if (!project) {
+      return res.status(404).json({ message: "Project not found." });
     }
 
-    res.status(200).json({message: "Project deleted."})
+    res.status(200).json({ message: "Project and related tasks deleted." });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -1,14 +1,15 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useTaskStore } from '../../stores/taskStore'
 import { useProjectStore } from '../../stores/projectStore'
-import NewTaskModal from '../modals/NewTaskModal.vue'
 import TaskCard from './TaskCard.vue'
-import AppButton from '../ui/AppButton.vue'
 
 const taskStore = useTaskStore()
 const projectStore = useProjectStore()
-const isModalOpen = ref(false)
+
+const refetchTasks = () => {
+  taskStore.fetchTasks()
+}
 
 const props = defineProps({
   type: {
@@ -51,23 +52,20 @@ const columnTitle = computed(() => columnTitles[props.type] || '')
       <h2 class="text-xl sm:text-2xl font-bold text-gray-800 text-center sm:text-left">
         {{ columnTitle }}
       </h2>
-      <span v-if="type === 'todo'">
-        <AppButton title="+ Add Task" btnClass="primary" @click="isModalOpen = true" />
-      </span>
     </header>
 
     <div v-if="tasksByStatus(type).length > 0" class="space-y-3">
       <TaskCard
         v-for="task in tasksByStatus(type)"
-        :key="task.id"
+        :key="task._id"
+        :id="task._id"
         :title="task.title"
         :description="task.description"
         :status="task.status"
         :project="task.projectName"
+        @removeTask="refetchTasks"
       />
     </div>
     <p v-else class="text-sm text-center text-gray-500">No tasks in this column</p>
-
-    <NewTaskModal v-if="isModalOpen" @close="isModalOpen = false" />
   </section>
 </template>

@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from '@headlessui/vue'
 import { XMarkIcon } from '@heroicons/vue/24/outline'
+import { CheckCircleIcon, ExclamationCircleIcon } from '@heroicons/vue/24/outline'
 
 defineProps({
   title: {
@@ -23,16 +24,40 @@ defineProps({
 const emit = defineEmits(['close'])
 
 const isOpen = ref(true)
+const toast = ref({
+  show: false,
+  message: '',
+  type: 'success',
+  timeout: 2000,
+})
+
+const showToast = (message, type = 'success') => {
+  toast.value = {
+    show: true,
+    message,
+    type,
+    timeout: type === 'success' ? 2000 : 3000,
+  }
+
+  setTimeout(() => {
+    toast.value.show = false
+  }, toast.value.timeout)
+}
 
 const closeModal = () => {
   isOpen.value = false
   emit('close')
 }
 
+defineExpose({
+  showToast,
+})
+
 watch(isOpen, (newVal) => {
   if (!newVal) emit('close')
 })
 </script>
+
 <template>
   <TransitionRoot appear :show="isOpen" as="template">
     <HeadlessDialog as="div" @close="closeModal" class="relative z-10">
@@ -47,6 +72,39 @@ watch(isOpen, (newVal) => {
       >
         <div class="fixed inset-0 bg-black/25"></div>
       </TransitionChild>
+      <Transition
+        enter-active-class="transition ease-out duration-300 transform"
+        enter-from-class="translate-y-2 opacity-0"
+        enter-to-class="translate-y-0 opacity-100"
+        leave-active-class="transition ease-in duration-200 transform"
+        leave-from-class="translate-y-0 opacity-100"
+        leave-to-class="translate-y-2 opacity-0"
+      >
+        <div v-if="toast.show" class="fixed top-4 right-4 z-50">
+          <div
+            :class="{
+              'bg-green-50 text-green-800': toast.type === 'success',
+              'bg-red-50 text-red-800': toast.type === 'error',
+            }"
+            class="rounded-md p-4 shadow-lg border"
+          >
+            <div class="flex items-start">
+              <div class="flex-shrink-0">
+                <CheckCircleIcon
+                  v-if="toast.type === 'success'"
+                  class="h-5 w-5 text-green-400"
+                  aria-hidden="true"
+                />
+                <ExclamationCircleIcon v-else class="h-5 w-5 text-red-400" aria-hidden="true" />
+              </div>
+              <div class="ml-3">
+                <p class="text-sm font-medium">{{ toast.message }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+
       <div class="fixed inset-0 right-0 min-h-full w-full overflow-y-auto">
         <div class="flex min-h-full justify-end text-center">
           <TransitionChild
@@ -87,6 +145,7 @@ watch(isOpen, (newVal) => {
     </HeadlessDialog>
   </TransitionRoot>
 </template>
+
 <style>
 .fade-enter-active,
 .fade-leave-active {
