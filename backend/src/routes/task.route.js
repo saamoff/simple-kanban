@@ -6,7 +6,7 @@ router.get("/", getTasks);
 router.get("/:id", getTask);
 
 router.post("/", createTask);
-router.post("/:taskId/collaboratos/:collaboratorId", associateCollaborator)
+router.post("/:taskId/collaborators", associateCollaborator)
 
 router.put("/:id", updateTask);
 

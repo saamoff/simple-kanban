@@ -44,20 +44,31 @@ export const useTaskStore = defineStore('task', {
       }
     },
 
-    async createTask(taskData: Omit<Task, '_id' | 'createdAt' | 'updatedAt'>) {
+    async createTask(taskData) {
       this.isLoading = true
       try {
-        const payload = {
-          title: taskData.title || '',
-          description: taskData.description || '',
-          project: taskData.project || null,
-          collaborators: Array.isArray(taskData.collaborators) ? [...taskData.collaborators] : [],
+        const response = await api.tasks.createTask(taskData)
+
+        if (!response?.data?._id) {
+          throw new Error('Invalid response format from server')
         }
 
-        const response = await api.tasks.createTask(payload)
-        this.tasks.push(response.data)
-        return response.data
+        const newTask = {
+          ...response.data,
+          collaborators: [],
+        }
+        this.tasks.push(newTask)
+        return {
+          data: newTask,
+          status: response.status,
+          headers: response.headers,
+        }
       } catch (err) {
+        console.error('Error in createTask:', {
+          message: err.message,
+          config: err.config,
+          response: err.response?.data,
+        })
         this.error = err.message || 'Failed to create task'
         throw err
       } finally {
@@ -101,20 +112,19 @@ export const useTaskStore = defineStore('task', {
       }
     },
 
-    async addCollaborator(taskId: string, collaboratorId: string) {
+    async addCollaborator(taskId: string, collaboratorIds: string[]) {
       try {
-        await api.tasks.associateCollaborator(taskId, collaboratorId)
+        await api.tasks.associateCollaborator(taskId, collaboratorIds)
         const task = this.tasks.find((t) => t._id === taskId)
-        if (task && !task.collaborators.includes(collaboratorId)) {
-          task.collaborators.push(collaboratorId)
+        if (task) {
+          task.collaborators = [...new Set([...task.collaborators, ...collaboratorIds])]
         }
       } catch (err) {
-        this.error = err.message || 'Failed to add collaborator'
+        console.error(`Failed to add collaborators:`, err)
         throw err
       }
     },
   },
-
   getters: {
     getTasksByStatus: (state) => (status: Task['status']) => {
       return state.tasks.filter((task) => task.status === status)

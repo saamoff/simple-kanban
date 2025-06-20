@@ -61,6 +61,7 @@ const columnTitle = computed(() => columnTitles[props.type] || '')
         :id="task._id"
         :title="task.title"
         :description="task.description"
+        :collaborators="task.collaborators"
         :status="task.status"
         :project="task.projectName"
         @removeTask="refetchTasks"

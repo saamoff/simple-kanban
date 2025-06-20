@@ -12,7 +12,6 @@ const formData = ref({
   title: '',
   description: '',
   projectId: '',
-  collaborators: [],
 })
 
 const errorMsg = ref('')
@@ -40,19 +39,22 @@ async function handleSubmit() {
       title: formData.value.title,
       description: formData.value.description,
       project: formData.value.projectId,
-      collaboratorIds: formData.value.collaborators,
     }
 
-    await taskStore.createTask(taskPayload)
+    const response = await taskStore.createTask(taskPayload)
 
-    formData.value = {
-      title: '',
-      description: '',
-      projectId: '',
-      collaborators: [],
+    if (response && response._id) {
+      formData.value = {
+        title: '',
+        description: '',
+        projectId: '',
+      }
+      showSuccess()
+    } else {
+      throw new Error('Task creation failed')
     }
-    showSuccess()
   } catch (err) {
+    console.error('Task creation error:', err)
     showError()
     errorMsg.value = err.response?.data?.message || err.message || 'Failed to create task'
   }
@@ -60,7 +62,11 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <ModalContainer ref="modalRef" title="New Task" description="Create a new task for your project">
+  <ModalContainer
+    ref="modalRef"
+    title="New Task"
+    description="Create a new task for your project. You can add collaborators later!"
+  >
     <div class="space-y-4">
       <form class="space-y-4" @submit.prevent="handleSubmit">
         <AppInput

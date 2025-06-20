@@ -8,25 +8,17 @@ const register = async (req, res, next) => {
     const { username, password } = req.body;
 
     if (!username || !password) {
-      return res.status(400)("Username and password are required.");
+      return res.status(400).json({ message: "Username and password are required." });
     }
 
     const existingUser = await User.findOne({ username });
     if (existingUser) {
-      return res.status(400).json({message:"Username already in use."});
+      return res.status(400).json({ message: "Username already in use." });
     }
 
     const user = await User.create({
       username,
       password
-    });
-
-    res.status(201).json({
-      user: {
-        id: user._id,
-        username: user.username
-      },
-      token
     });
 
     await Collaborator.create({

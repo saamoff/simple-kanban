@@ -1,11 +1,12 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useTaskStore } from '../../stores/taskStore'
 import AppDialog from '../ui/AppDialog.vue'
 import ModalContainer from './ModalContainer.vue'
 import AppButton from '../ui/AppButton.vue'
 import AppInput from '../ui/AppInput.vue'
 import ProjectSelect from '../shared/ProjectSelect.vue'
+import CollaboratorSelect from '../shared/CollaboratorSelect.vue'
 
 const taskStore = useTaskStore()
 const isEditMode = ref(false)
@@ -34,6 +35,17 @@ const props = defineProps({
   },
 })
 
+watch(isEditMode, (newVal) => {
+  if (newVal) {
+    const currentTask = taskStore.tasks.find((t) => t._id === props.id)
+    formData.value = {
+      title: props.title,
+      description: props.description,
+      collaborators: currentTask?.collaborators?.map((c) => c._id) || [],
+    }
+  }
+})
+
 const emit = defineEmits(['saveChanges', 'removeTask'])
 
 const showSuccess = () => {
@@ -54,36 +66,29 @@ const clearFields = () => {
   isEditMode.value = false
 }
 
+function handleCollaboratorUpdate(newCollaborators) {
+  formData.value.collaborators = newCollaborators.map((id) => id.toString())
+}
+
 async function handleSubmit() {
   try {
-    if (!formData.value.title) {
-      throw new Error('Task title is required')
-    }
-
-    if (!formData.value.projectId) {
-      throw new Error('Please select a project')
-    }
-
     const taskPayload = {
       title: formData.value.title,
       description: formData.value.description,
       project: formData.value.projectId,
-      collaboratorIds: formData.value.collaborators,
     }
-
     await taskStore.updateTask(props.id, taskPayload)
 
-    formData.value = {
-      title: '',
-      description: '',
-      projectId: '',
-      collaborators: [],
+    if (formData.value.collaborators.length > 0) {
+      await taskStore.addCollaborator(props.id, formData.value.collaborators)
     }
+
+    clearFields()
     showSuccess()
-    isEditMode.value = false
+    emit('saveChanges')
   } catch (err) {
     showError()
-    return err.response?.data?.message || err.message || 'Failed to create task'
+    console.error('Task update failed:', err)
   }
 }
 
@@ -104,14 +109,15 @@ function removeTask() {
 <template>
   <ModalContainer
     ref="modalRef"
-    :title="isEditMode ? '' : title"
+    :title="isEditMode ? 'Editing Task' : title"
     :description="isEditMode ? '' : description"
   >
-    <form v-if="isEditMode" @submit.prevent="handleSubmit">
+    <div v-if="isEditMode">
       <AppInput
         label="Task Title"
         inputType="input"
         placeHolder="Insert New Task Title"
+        class="mb-4"
         required
         v-model="formData.title"
       />
@@ -119,20 +125,30 @@ function removeTask() {
         label="Task Description"
         inputType="textarea"
         placeHolder="Insert New Task Description"
+        class="mb-4"
         required
         v-model="formData.description"
       />
       <ProjectSelect v-model="formData.projectId" />
-      <div class="w-full flex gap-2">
+      <CollaboratorSelect
+        v-model="formData.collaborators"
+        @update:modelValue="handleCollaboratorUpdate"
+      />
+      <div class="w-full flex gap-2 mt-4">
         <AppButton
           v-if="isEditMode"
           title="Cancel Changes"
           btnClass="secondary"
           @click="clearFields"
         />
-        <AppButton v-if="isEditMode" title="Save Changes" btnClass="primary" type="submit" />
+        <AppButton
+          v-if="isEditMode"
+          title="Save Changes"
+          btnClass="primary"
+          @click="handleSubmit"
+        />
       </div>
-    </form>
+    </div>
     <div class="w-full flex gap-2">
       <AppButton
         v-if="!isEditMode"

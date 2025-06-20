@@ -1,8 +1,10 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { UserGroupIcon, ClockIcon } from '@heroicons/vue/24/outline'
 import TaskInfoModal from '../modals/TaskInfoModal.vue'
+import { useCollaboratorStore } from '../../stores/collaboratorStore'
 
+const collaboratorStore = useCollaboratorStore()
 const props = defineProps({
   id: {
     type: [String, Number],
@@ -34,17 +36,31 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['update:collaborators', 'dragstart'])
+// Fetch collaborators when component mounts
+onMounted(async () => {
+  if (collaboratorStore.collaborators.length === 0) {
+    await collaboratorStore.fetchCollaborators()
+  }
+})
 
-const onDragStart = () => {
-  emit('dragstart', props.task)
-}
+const collaboratorNames = computed(() => {
+  if (!props.collaborators || !props.collaborators.length) return []
+
+  return props.collaborators
+    .map((collaborator) => {
+      const id = collaborator._id || collaborator
+      const found = collaboratorStore.collaborators.find((c) => c._id === id)
+      return found ? found.name : 'Unknown'
+    })
+    .filter((name) => name !== 'Unknown')
+})
 
 const showTooltip = ref(false)
 const isModalOpen = ref(false)
 </script>
+
 <template>
-  <div draggable="true" @dragstart="onDragStart">
+  <div draggable="true">
     <button
       type="button"
       class="w-full p-4 mb-5 text-left transition-colors duration-200 bg-white border border-gray-300 rounded-lg cursor-pointer shadow-sm hover:bg-gray-100"
@@ -54,7 +70,6 @@ const isModalOpen = ref(false)
         <h2 class="text-lg font-semibold text-gray-900">
           {{ title }}
         </h2>
-
         <span
           class="px-2 py-1 text-sm font-bold text-blue-500 border border-blue-500 rounded-lg hidden sm:block"
         >
@@ -74,8 +89,8 @@ const isModalOpen = ref(false)
             @mouseleave="showTooltip = false"
           >
             <UserGroupIcon class="w-4 h-4 mr-1" />
-            {{ collaborators.length }}
-            <span class="hidden sm:block"> &nbsp;Collaborators </span>
+            {{ collaboratorNames.length }}
+            <span class="hidden sm:block">&nbsp;Collaborators</span>
           </span>
 
           <Transition
@@ -87,12 +102,12 @@ const isModalOpen = ref(false)
             leave-to-class="transform scale-95 opacity-0"
           >
             <div
-              v-if="showTooltip && collaborators.length > 0"
+              v-if="showTooltip && collaboratorNames.length > 0"
               class="absolute left-0 z-10 p-2 mt-1 text-xs text-white bg-gray-800 rounded-lg shadow-lg w-max"
             >
               <ul>
-                <li v-for="collaborator in collaborators" :key="collaborator" class="py-1">
-                  {{ collaborator }}
+                <li v-for="(name, index) in collaboratorNames" :key="index" class="py-1">
+                  {{ name }}
                 </li>
               </ul>
             </div>
@@ -111,12 +126,10 @@ const isModalOpen = ref(false)
       :id="id"
       :title="title"
       :description="description"
-      :collaborators="collaborators"
+      :collaborators="collaboratorNames"
       :time-spent="timeSpent"
       :status="status"
       @close="isModalOpen = false"
-      @removeTask="$emit('removeTask')"
-      @saveChanges="$emit('removeTask')"
     />
   </div>
 </template>

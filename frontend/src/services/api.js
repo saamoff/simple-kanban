@@ -25,8 +25,8 @@ const TaskService = {
     }
     return apiClient.post('/tasks', taskPayload)
   },
-  associateCollaborator(id, collaboratorId) {
-    return apiClient.post(`/taks/${id}/collaborators/${collaboratorId}`)
+  associateCollaborator(id, collaboratorIds) {
+    return apiClient.post(`/tasks/${id}/collaborators`, { collaboratorIds })
   },
   updateTask(id, updateData) {
     return apiClient.put(`/tasks/${id}`, updateData)

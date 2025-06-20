@@ -6,6 +6,7 @@ interface CollaboratorState {
   collaborators: Collaborator[]
   isLoading: boolean
   name: String
+  error: string | null
 }
 
 export const useCollaboratorStore = defineStore('collaborator', {
@@ -13,6 +14,7 @@ export const useCollaboratorStore = defineStore('collaborator', {
     collaborators: [],
     isLoading: false,
     name: '',
+    error: null,
   }),
 
   actions: {
@@ -21,8 +23,8 @@ export const useCollaboratorStore = defineStore('collaborator', {
       try {
         const response = await api.collaborators.getCollaborators()
         this.collaborators = response.data
-      } catch (err: any) {
-        console.error(err.message || 'Failed to fetch collaborators')
+      } catch (error) {
+        console.error(error.message || 'Failed to fetch collaborators')
       } finally {
         this.isLoading = false
       }
