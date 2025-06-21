@@ -1,10 +1,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { UserGroupIcon, ClockIcon } from '@heroicons/vue/24/outline'
-import { PlayIcon } from '@heroicons/vue/24/solid'
 import { useCollaboratorStore } from '../../stores/collaboratorStore'
 import TaskInfoModal from '../modals/TaskInfoModal.vue'
-import AppButton from '../ui/AppButton.vue'
 
 const collaboratorStore = useCollaboratorStore()
 const props = defineProps({
@@ -83,20 +81,20 @@ const handleDragEnd = () => {
       class="w-full p-4 mb-5 text-left transition-colors duration-200 bg-white border border-gray-300 rounded-lg cursor-pointer shadow-sm hover:bg-gray-100"
       @click="isModalOpen = true"
     >
-      <div class="flex items-center justify-between sm:flex-row">
-        <h2 class="text-lg font-semibold text-gray-900">
+      <div class="flex items-center sm:flex-row">
+        <h2 class="text-lg font-semibold text-gray-900 truncate">
           {{ title }}
         </h2>
-        <span
-          class="px-2 py-1 text-sm font-bold text-blue-500 border border-blue-500 rounded-lg hidden sm:block"
-        >
-          {{ project }}
-        </span>
       </div>
 
-      <p class="mt-1 text-sm text-gray-400 hidden sm:block truncate pr-35">
-        {{ description }}
-      </p>
+      <span class="mt-2 flex justify-between text-sm text-blue-500 whitespace-nowrap">
+        <p class="text-sm text-gray-500 truncate pr-4 hidden sm:block">
+          {{ description }}
+        </p>
+        <p class="px-2 py-1 border border-blue-500 rounded-lg font-bold">
+          {{ project }}
+        </p>
+      </span>
 
       <div class="flex items-center justify-between mt-2">
         <div class="relative">
@@ -136,12 +134,6 @@ const handleDragEnd = () => {
           <span class="hidden sm:block">Time Spent:&nbsp;</span>{{ timeSpent }}
         </span>
       </div>
-      <AppButton
-        v-if="status !== 'done'"
-        :icon="PlayIcon"
-        title="Start Timer"
-        btnClass="green-full"
-      />
     </div>
 
     <TaskInfoModal

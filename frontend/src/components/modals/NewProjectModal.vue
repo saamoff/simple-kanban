@@ -1,9 +1,9 @@
 <script setup>
 import { ref } from 'vue'
+import { useProjectStore } from '../../stores/projectStore'
 import AppInput from '../ui/AppInput.vue'
 import AppButton from '../ui/AppButton.vue'
 import ModalContainer from './ModalContainer.vue'
-import { useProjectStore } from '../../stores/projectStore'
 
 const projectStore = useProjectStore()
 const modalRef = ref(null)

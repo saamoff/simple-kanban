@@ -2,9 +2,9 @@
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
 import { useTaskStore } from '../../stores/taskStore'
 import AppDialog from '../ui/AppDialog.vue'
-import ModalContainer from './ModalContainer.vue'
 import AppButton from '../ui/AppButton.vue'
 import AppInput from '../ui/AppInput.vue'
+import ModalContainer from './ModalContainer.vue'
 import ProjectSelect from '../shared/ProjectSelect.vue'
 import CollaboratorSelect from '../shared/CollaboratorSelect.vue'
 

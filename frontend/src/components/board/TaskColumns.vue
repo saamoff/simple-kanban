@@ -19,9 +19,9 @@ const props = defineProps({
   },
 })
 
-const tasksByStatus = (status) => {
-  return taskStore.tasks
-    .filter((task) => task.status === status)
+const tasksByStatus = computed(() => {
+  return taskStore.filteredTasks
+    .filter((task) => task.status === props.type)
     .map((task) => {
       const project = projectStore.projects.find((p) => p._id === task.project)
       return {
@@ -29,7 +29,7 @@ const tasksByStatus = (status) => {
         projectName: project ? project.name : 'Unknown Project',
       }
     })
-}
+})
 
 const columnTitles = {
   todo: 'Backlog',
@@ -66,9 +66,10 @@ const handleDrop = async (e) => {
   }
 }
 </script>
+
 <template>
   <section
-    class="w-full h-full p-5 bg-white rounded-lg shadow-md"
+    class="w-full h-full p-5 bg-white rounded-lg shadow-md flex flex-col"
     :class="{
       'border-t-4 border-blue-500': type === 'todo',
       'border-t-4 border-yellow-500': type === 'inprogress',
@@ -84,9 +85,13 @@ const handleDrop = async (e) => {
       </h2>
     </header>
 
-    <div v-if="tasksByStatus(type).length > 0" class="space-y-3">
+    <div
+      v-if="tasksByStatus.length > 0"
+      class="space-y-3 overflow-y-auto flex-1"
+      style="max-height: calc(80vh - 200px); min-height: 100px"
+    >
       <TaskCard
-        v-for="task in tasksByStatus(type)"
+        v-for="task in tasksByStatus"
         :key="task._id"
         :id="task._id"
         :title="task.title"
@@ -97,6 +102,8 @@ const handleDrop = async (e) => {
         @removeTask="refetchTasks"
       />
     </div>
-    <p v-else class="text-sm text-center text-gray-500">No tasks in this column</p>
+    <p v-else class="text-sm text-center text-gray-500 flex-1 flex items-center justify-center">
+      No tasks in this column
+    </p>
   </section>
 </template>

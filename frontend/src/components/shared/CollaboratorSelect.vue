@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, toRaw } from 'vue'
+import { computed, ref } from 'vue'
 import { useCollaboratorStore } from '../../stores/collaboratorStore'
 
 const collaboratorStore = useCollaboratorStore()
@@ -20,15 +20,13 @@ if (collaboratorStore.collaborators.length === 0) {
 }
 
 const filteredCollaborators = computed(() => {
-  const collaborators = toRaw(collaboratorStore.collaborators) || []
-  return collaborators.filter((collaborator) =>
+  return collaboratorStore.collaborators.filter((collaborator) =>
     collaborator.name.toLowerCase().includes(searchQuery.value.toLowerCase()),
   )
 })
 
 const displayedCollaborator = computed(() => {
-  const collaborators = filteredCollaborators.value || []
-  return showAll.value ? collaborators : collaborators.slice(0, 6)
+  return showAll.value ? filteredCollaborators.value : filteredCollaborators.value.slice(0, 6)
 })
 
 const hasMoreCollaborators = computed(() => {
@@ -36,15 +34,15 @@ const hasMoreCollaborators = computed(() => {
 })
 
 function toggleCollaborator(id) {
-  const currentSelection = [...props.modelValue].map((c) => c.toString())
+  const newSelection = [...props.modelValue]
   const stringId = id.toString()
+  const index = newSelection.findIndex((collabId) => collabId === stringId)
 
-  const index = currentSelection.findIndex((collabId) => collabId === stringId)
-
-  const newSelection =
-    index === -1
-      ? [...currentSelection, stringId]
-      : currentSelection.filter((collabId) => collabId !== stringId)
+  if (index === -1) {
+    newSelection.push(stringId)
+  } else {
+    newSelection.splice(index, 1)
+  }
 
   emit('update:modelValue', newSelection)
 }

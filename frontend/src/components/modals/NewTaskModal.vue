@@ -1,10 +1,10 @@
 <script setup>
 import { ref } from 'vue'
+import { useTaskStore } from '../../stores/taskStore'
 import AppInput from '../ui/AppInput.vue'
 import AppButton from '../ui/AppButton.vue'
 import ProjectSelect from '../shared/ProjectSelect.vue'
 import ModalContainer from './ModalContainer.vue'
-import { useTaskStore } from '../../stores/taskStore'
 
 const taskStore = useTaskStore()
 

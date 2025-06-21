@@ -1,12 +1,17 @@
 import { defineStore } from 'pinia'
 import api from '../services/api.js'
 import type { Task } from '../types/task'
+import type { Collaborator } from '../types/collaborator.js'
 
 interface TaskState {
   tasks: Task[]
   currentTask: Task | null
   isLoading: boolean
   error: string | null
+  filters: {
+    project?: string | null
+    collaborator: string | null
+  }
 }
 
 export const useTaskStore = defineStore('task', {
@@ -15,6 +20,10 @@ export const useTaskStore = defineStore('task', {
     currentTask: null,
     isLoading: false,
     error: null,
+    filters: {
+      project: null,
+      collaborator: null,
+    },
   }),
 
   actions: {
@@ -137,7 +146,7 @@ export const useTaskStore = defineStore('task', {
         await api.tasks.associateCollaborator(taskId, collaboratorIds)
         const task = this.tasks.find((t) => t._id === taskId)
         if (task) {
-          task.collaborators = [...new Set([...task.collaborators, ...collaboratorIds])]
+          task.collaborators = Array.from(new Set([...task.collaborators, ...collaboratorIds]))
         }
       } catch (err) {
         console.error(`Failed to add collaborators:`, err)
@@ -153,8 +162,34 @@ export const useTaskStore = defineStore('task', {
         throw error
       }
     },
+
+    setFilters(filters: { project?: string | null; collaborator?: string | null }) {
+      if (filters.project !== undefined) {
+        this.filters.project = filters.project
+      }
+      if (filters.collaborator !== undefined) {
+        this.filters.collaborator = filters.collaborator
+      }
+    },
   },
   getters: {
+    filteredTasks: (state) => {
+      let filtered = state.tasks
+      if (state.filters.project) {
+        filtered = filtered.filter((task) => task.project === state.filters.project)
+      }
+
+      if (state.filters.collaborator) {
+        filtered = filtered.filter((task) => {
+          return task.collaborators?.some((collab: string | Collaborator) => {
+            const collaboratorId = typeof collab === 'string' ? collab : collab._id
+            return collaboratorId === state.filters.collaborator
+          })
+        })
+      }
+
+      return filtered
+    },
     getTasksByStatus: (state) => (status: Task['status']) => {
       return state.tasks.filter((task) => task.status === status)
     },
