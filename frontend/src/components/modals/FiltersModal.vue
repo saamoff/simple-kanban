@@ -1,6 +1,7 @@
 <script setup>
 import ModalContainer from './ModalContainer.vue'
 </script>
+
 <template>
-  <ModalContainer title="Filters"> </ModalContainer>
+  <ModalContainer title="Filter Tasks"> </ModalContainer>
 </template>

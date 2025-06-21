@@ -1,8 +1,10 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { UserGroupIcon, ClockIcon } from '@heroicons/vue/24/outline'
-import TaskInfoModal from '../modals/TaskInfoModal.vue'
+import { PlayIcon } from '@heroicons/vue/24/solid'
 import { useCollaboratorStore } from '../../stores/collaboratorStore'
+import TaskInfoModal from '../modals/TaskInfoModal.vue'
+import AppButton from '../ui/AppButton.vue'
 
 const collaboratorStore = useCollaboratorStore()
 const props = defineProps({
@@ -36,7 +38,6 @@ const props = defineProps({
   },
 })
 
-// Fetch collaborators when component mounts
 onMounted(async () => {
   if (collaboratorStore.collaborators.length === 0) {
     await collaboratorStore.fetchCollaborators()
@@ -57,12 +58,28 @@ const collaboratorNames = computed(() => {
 
 const showTooltip = ref(false)
 const isModalOpen = ref(false)
+
+const emit = defineEmits(['dragstart', 'dragend'])
+
+const handleDragStart = (e) => {
+  e.dataTransfer.setData('taskId', props.id)
+  emit('dragstart', props.id)
+}
+
+const handleDragEnd = () => {
+  emit('dragend')
+}
 </script>
 
 <template>
-  <div draggable="true">
-    <button
-      type="button"
+  <div
+    draggable="true"
+    @dragstart="handleDragStart"
+    @dragend="handleDragEnd"
+    class="draggable-task"
+    :data-task-id="id"
+  >
+    <div
       class="w-full p-4 mb-5 text-left transition-colors duration-200 bg-white border border-gray-300 rounded-lg cursor-pointer shadow-sm hover:bg-gray-100"
       @click="isModalOpen = true"
     >
@@ -77,7 +94,7 @@ const isModalOpen = ref(false)
         </span>
       </div>
 
-      <p class="mt-1 text-sm text-gray-400 hidden sm:block">
+      <p class="mt-1 text-sm text-gray-400 hidden sm:block truncate pr-35">
         {{ description }}
       </p>
 
@@ -119,7 +136,13 @@ const isModalOpen = ref(false)
           <span class="hidden sm:block">Time Spent:&nbsp;</span>{{ timeSpent }}
         </span>
       </div>
-    </button>
+      <AppButton
+        v-if="status !== 'done'"
+        :icon="PlayIcon"
+        title="Start Timer"
+        btnClass="green-full"
+      />
+    </div>
 
     <TaskInfoModal
       v-if="isModalOpen"
@@ -133,3 +156,11 @@ const isModalOpen = ref(false)
     />
   </div>
 </template>
+<style scoped>
+.draggable-task {
+  cursor: grab;
+}
+.draggable-task:active {
+  cursor: grabbing;
+}
+</style>

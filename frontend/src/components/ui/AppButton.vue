@@ -11,7 +11,8 @@ defineProps({
   btnClass: {
     type: String,
     required: true,
-    validator: (value) => ['primary', 'secondary', 'tertiary'].includes(value),
+    validator: (value) =>
+      ['primary', 'secondary', 'red-outline', 'red-full', 'green-full'].includes(value),
   },
   size: {
     type: String,
@@ -41,7 +42,11 @@ const emit = defineEmits(['click'])
           btnClass === 'primary',
         'text-blue-500 bg-white hover:bg-blue-50 border-2 border-offset-0':
           btnClass === 'secondary',
-        'text-red-500 bg-transparent hover:bg-red-50 border-2': btnClass === 'tertiary',
+        'text-red-500 bg-transparent hover:bg-red-50 border-2': btnClass === 'red-outline',
+        'text-white bg-red-500 h-11 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2':
+          btnClass === 'red-full',
+        'text-white bg-green-500 h-11 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2':
+          btnClass === 'green-full',
         'opacity-50 cursor-not-allowed': disabled,
       },
       {

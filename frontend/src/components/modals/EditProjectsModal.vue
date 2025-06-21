@@ -83,7 +83,7 @@ function removeProject() {
       <AppButton
         v-if="!isEditMode"
         title="Remove Project"
-        btnClass="tertiary"
+        btnClass="red-outline"
         :disabled="!formData.projectId"
         @click="removeProject"
       />

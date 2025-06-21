@@ -3,5 +3,7 @@ import BoardContainer from '../components/board/BoardContainer.vue'
 </script>
 
 <template>
-  <BoardContainer />
+  <div class="bg-gray-100 min-h-screen">
+    <BoardContainer />
+  </div>
 </template>

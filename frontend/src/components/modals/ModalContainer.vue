@@ -128,11 +128,11 @@ watch(isOpen, (newVal) => {
                 </button>
               </div>
               <div>
-                <DialogTitle as="h3" class="text-4xl font-bold text-gray-900">
+                <DialogTitle as="h1" class="text-4xl font-bold">
                   {{ title }}
                 </DialogTitle>
               </div>
-              <div class="mt-5 mb-5">
+              <div class="mt-1 mb-5">
                 <p class="text-gray-500">
                   {{ description }}
                 </p>

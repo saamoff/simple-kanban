@@ -96,6 +96,26 @@ export const useTaskStore = defineStore('task', {
       }
     },
 
+    async updateTaskStatus(taskId: string, newStatus: string) {
+      try {
+        const response = await api.tasks.updateTaskStatus(taskId, {
+          status: newStatus,
+        })
+        const index = this.tasks.findIndex((t) => t._id === taskId)
+        if (index !== -1) {
+          this.tasks[index].status = newStatus
+        }
+        return response.data
+      } catch (error) {
+        console.error('Error updating task status:', {
+          error: error.response?.data || error.message,
+          taskId,
+          newStatus,
+        })
+        throw error
+      }
+    },
+
     async deleteTask(id: string) {
       this.isLoading = true
       try {
@@ -122,6 +142,15 @@ export const useTaskStore = defineStore('task', {
       } catch (err) {
         console.error(`Failed to add collaborators:`, err)
         throw err
+      }
+    },
+
+    async removeCollaborator(taskId, collaboratorId) {
+      try {
+        const response = await api.tasks.deleteCollaborator(taskId, collaboratorId)
+        return response.data
+      } catch (error) {
+        throw error
       }
     },
   },

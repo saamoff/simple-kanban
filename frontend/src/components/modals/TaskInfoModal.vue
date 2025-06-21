@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
 import { useTaskStore } from '../../stores/taskStore'
 import AppDialog from '../ui/AppDialog.vue'
 import ModalContainer from './ModalContainer.vue'
@@ -11,7 +11,16 @@ import CollaboratorSelect from '../shared/CollaboratorSelect.vue'
 const taskStore = useTaskStore()
 const isEditMode = ref(false)
 const isDialogOpen = ref(false)
+const isLoading = ref(false)
 const modalRef = ref(null)
+const initialFormData = ref(null)
+const isMobile = ref(window.innerWidth < 768)
+
+const statusOptions = [
+  { text: 'Backlog', value: 'todo' },
+  { text: 'In Progress', value: 'inprogress' },
+  { text: 'Completed', value: 'finished' },
+]
 
 const formData = ref({
   title: '',
@@ -29,10 +38,30 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  collaborators: {
+    type: [String, Number],
+    required: true,
+  },
+  status: {
+    type: String,
+    required: true,
+  },
   id: {
     type: [String, Number],
     required: true,
   },
+})
+
+const hasChanges = computed(() => {
+  if (!initialFormData.value) return false
+
+  return (
+    formData.value.title !== initialFormData.value.title ||
+    formData.value.description !== initialFormData.value.description ||
+    formData.value.projectId !== initialFormData.value.projectId ||
+    JSON.stringify(formData.value.collaborators) !==
+      JSON.stringify(initialFormData.value.collaborators)
+  )
 })
 
 watch(isEditMode, (newVal) => {
@@ -41,28 +70,29 @@ watch(isEditMode, (newVal) => {
     formData.value = {
       title: props.title,
       description: props.description,
+      projectId: currentTask?.project?._id,
       collaborators: currentTask?.collaborators?.map((c) => c._id) || [],
     }
+    console.log('Initial projectId:', formData.value.projectId)
+    initialFormData.value = JSON.parse(JSON.stringify(formData.value))
+  } else {
+    initialFormData.value = null
   }
 })
-
-const emit = defineEmits(['saveChanges', 'removeTask'])
+onMounted(() => window.addEventListener('resize', updateMobileStatus))
+onUnmounted(() => window.removeEventListener('resize', updateMobileStatus))
+const emit = defineEmits(['saveChanges', 'removeTask', 'statusChanged'])
+const updateMobileStatus = () => (isMobile.value = window.innerWidth < 768)
 
 const showSuccess = () => {
-  modalRef.value?.showToast('New Task Successfully created')
+  modalRef.value?.showToast('Task successfully updated')
 }
 
-const showError = () => {
-  modalRef.value?.showToast('Something went wrong!', 'error')
+const showError = (message = 'Something went wrong!') => {
+  modalRef.value?.showToast(message, 'error')
 }
 
 const clearFields = () => {
-  formData.value = {
-    title: '',
-    description: '',
-    projectId: '',
-    collaborators: [],
-  }
   isEditMode.value = false
 }
 
@@ -70,34 +100,80 @@ function handleCollaboratorUpdate(newCollaborators) {
   formData.value.collaborators = newCollaborators.map((id) => id.toString())
 }
 
-async function handleSubmit() {
+const handleStatusChange = async (newStatus) => {
+  if (newStatus === props.status) return
+
+  isLoading.value = true
   try {
-    const taskPayload = {
+    await taskStore.updateTask(props.id, { status: newStatus })
+    emit('statusChanged', newStatus)
+    modalRef.value?.showToast('Status updated successfully')
+  } catch (error) {
+    console.error('Error updating status:', error)
+    modalRef.value?.showToast('Failed to update status', 'error')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+async function handleSubmit() {
+  if (isLoading.value || !hasChanges.value) return
+
+  isLoading.value = true
+  try {
+    if (!formData.value.title.trim() || !formData.value.description.trim()) {
+      showError('Title and description are required')
+      return
+    }
+
+    const currentTask = taskStore.tasks.find((t) => t._id === props.id)
+    const currentCollaborators = currentTask?.collaborators?.map((c) => c._id.toString()) || []
+    const newCollaborators = formData.value.collaborators.map((id) => id.toString())
+
+    await taskStore.updateTask(props.id, {
       title: formData.value.title,
       description: formData.value.description,
       project: formData.value.projectId,
-    }
-    await taskStore.updateTask(props.id, taskPayload)
+    })
 
-    if (formData.value.collaborators.length > 0) {
-      await taskStore.addCollaborator(props.id, formData.value.collaborators)
+    const collaboratorsToAdd = newCollaborators.filter((id) => !currentCollaborators.includes(id))
+    const collaboratorsToRemove = currentCollaborators.filter(
+      (id) => !newCollaborators.includes(id),
+    )
+
+    for (const collaboratorId of collaboratorsToRemove) {
+      await taskStore.removeCollaborator(props.id, collaboratorId)
     }
 
-    clearFields()
+    if (collaboratorsToAdd.length > 0) {
+      await taskStore.addCollaborator(props.id, collaboratorsToAdd)
+    }
+
+    await taskStore.fetchTasks()
+
     showSuccess()
+    clearFields()
     emit('saveChanges')
   } catch (err) {
-    showError()
-    console.error('Task update failed:', err)
+    console.error('Full error details:', err)
+    console.error('Error response data:', err.response?.data)
+
+    const errorMessage =
+      err.response?.data?.message || err.message || 'Failed to update task. Please try again.'
+    showError(errorMessage)
+  } finally {
+    isLoading.value = false
   }
 }
 
 async function confirmRemoveTask() {
   try {
     await taskStore.deleteTask(props.id)
-    emit('removeProject')
+    await taskStore.fetchTasks()
+    emit('removeTask')
   } catch (error) {
     console.error('Failed to remove task:', error)
+    showError(error.response?.data?.message || 'Failed to delete task')
   }
   isDialogOpen.value = false
 }
@@ -106,12 +182,36 @@ function removeTask() {
   isDialogOpen.value = true
 }
 </script>
+
 <template>
   <ModalContainer
     ref="modalRef"
     :title="isEditMode ? 'Editing Task' : title"
     :description="isEditMode ? '' : description"
   >
+    <div class="mb-4" v-if="isMobile">
+      <label class="block text-sm font-medium text-gray-700 mb-1">Task Status</label>
+      <select
+        :value="status"
+        @change="handleStatusChange($event.target.value)"
+        :disabled="isLoading"
+        class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+        :class="{ 'opacity-50': isLoading }"
+      >
+        <option v-for="option in statusOptions" :key="option.value" :value="option.value">
+          {{ option.text }}
+        </option>
+      </select>
+    </div>
+    <div v-if="!isEditMode" class="mb-4">
+      <h3 class="text-2xl font-bold mb-1">Collaborators</h3>
+      <p v-if="!collaborators || collaborators.length === 0" class="text-gray-500">
+        There are no Collaborators associated with this Task.
+      </p>
+      <li v-for="(name, index) in collaborators" :key="index" class="py-1 text-blue-500">
+        {{ name }}
+      </li>
+    </div>
     <div v-if="isEditMode">
       <AppInput
         label="Task Title"
@@ -135,28 +235,19 @@ function removeTask() {
         @update:modelValue="handleCollaboratorUpdate"
       />
       <div class="w-full flex gap-2 mt-4">
+        <AppButton title="Cancel Changes" btnClass="secondary" @click="clearFields" />
         <AppButton
-          v-if="isEditMode"
-          title="Cancel Changes"
-          btnClass="secondary"
-          @click="clearFields"
-        />
-        <AppButton
-          v-if="isEditMode"
           title="Save Changes"
           btnClass="primary"
           @click="handleSubmit"
+          :loading="isLoading"
+          :disabled="!hasChanges"
         />
       </div>
     </div>
-    <div class="w-full flex gap-2">
-      <AppButton
-        v-if="!isEditMode"
-        title="Edit Task"
-        btnClass="primary"
-        @click="isEditMode = true"
-      />
-      <AppButton v-if="!isEditMode" title="Remove Task" btnClass="tertiary" @click="removeTask" />
+    <div v-if="!isEditMode" class="w-full flex gap-2">
+      <AppButton title="Edit Task" btnClass="primary" @click="isEditMode = true" />
+      <AppButton title="Remove Task" btnClass="red-outline" @click="removeTask" />
     </div>
     <AppDialog
       v-if="isDialogOpen"

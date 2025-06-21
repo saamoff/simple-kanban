@@ -38,6 +38,33 @@ const columnTitles = {
 }
 
 const columnTitle = computed(() => columnTitles[props.type] || '')
+
+const emit = defineEmits(['task-dropped'])
+
+const handleDragOver = (e) => {
+  e.preventDefault()
+  e.currentTarget.classList.add('bg-gray-50')
+}
+
+const handleDragLeave = (e) => {
+  e.preventDefault()
+  e.currentTarget.classList.remove('bg-gray-50')
+}
+
+const handleDrop = async (e) => {
+  e.preventDefault()
+  e.currentTarget.classList.remove('bg-gray-50')
+
+  const taskId = e.dataTransfer.getData('taskId')
+  if (taskId) {
+    try {
+      await taskStore.updateTaskStatus(taskId, props.type)
+      emit('task-dropped')
+    } catch (error) {
+      console.error('Error updating task status:', error)
+    }
+  }
+}
 </script>
 <template>
   <section
@@ -47,6 +74,9 @@ const columnTitle = computed(() => columnTitles[props.type] || '')
       'border-t-4 border-yellow-500': type === 'inprogress',
       'border-t-4 border-green-500': type === 'finished',
     }"
+    @dragover="handleDragOver"
+    @dragleave="handleDragLeave"
+    @drop="handleDrop"
   >
     <header class="flex sm:flex-row items-center justify-between mb-4">
       <h2 class="text-xl sm:text-2xl font-bold text-gray-800 text-center sm:text-left">

@@ -9,6 +9,14 @@ const apiClient = axios.create({
   },
 })
 
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
 const TaskService = {
   getTasks() {
     return apiClient.get('/tasks')
@@ -28,8 +36,14 @@ const TaskService = {
   associateCollaborator(id, collaboratorIds) {
     return apiClient.post(`/tasks/${id}/collaborators`, { collaboratorIds })
   },
+  deleteCollaborator(id, collaboratorId) {
+    return apiClient.delete(`/tasks/${id}/collaborators/${collaboratorId}`)
+  },
   updateTask(id, updateData) {
     return apiClient.put(`/tasks/${id}`, updateData)
+  },
+  updateTaskStatus(id, statusUpdate) {
+    return apiClient.patch(`/tasks/${id}/status`, statusUpdate)
   },
   deleteTask(id) {
     return apiClient.delete(`/tasks/${id}`)
@@ -67,8 +81,8 @@ const UserService = {
   register(userData) {
     return apiClient.post('/auth/register', userData)
   },
-  validateToken(token) {
-    return apiClient.post('auth/validate', token)
+  validateToken() {
+    return apiClient.get('/auth/validate')
   },
 }
 
@@ -87,6 +101,6 @@ const CollaboratorService = {
 export default {
   tasks: TaskService,
   projects: ProjectService,
-  users: UserService,
+  UserService,
   collaborators: CollaboratorService,
 }

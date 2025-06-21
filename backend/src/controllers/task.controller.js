@@ -44,6 +44,27 @@ const updateTask = async (req, res) => {
   }
 };
 
+const updateTaskStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    
+    const updatedTask = await Task.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true }
+    );
+    
+    if (!updatedTask) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+    
+    res.json(updatedTask);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 const deleteTask = async (req, res) => {
   try {
     const { id } = req.params;
@@ -80,11 +101,33 @@ const associateCollaborator = async (req, res) => {
   }
 };
 
+const removeCollaborator = async (req, res) => {
+  try {
+    const { taskId, collaboratorId } = req.params;
+
+    const task = await Task.findByIdAndUpdate(
+      taskId,
+      { $pull: { collaborators: collaboratorId } },
+      { new: true }
+    ).populate('collaborators', 'name');
+
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    res.status(200).json(task);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getTasks,
   getTask,
   createTask,
   updateTask,
+  updateTaskStatus,
   deleteTask,
   associateCollaborator,
+  removeCollaborator
 }
