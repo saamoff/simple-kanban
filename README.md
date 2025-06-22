@@ -2,7 +2,7 @@
 
 A task management system with time tracking, built with Vue.js (frontend) and Node.js (backend). Helps teams organize tasks, track time spent, and visualize productivity metrics.
 
-![Login Page](https://prnt.sc/Qn5vfiHDSogK)  
+![Login Page](https://imgur.com/9IKKBXA.png)  
 *Figure 1: User login page with JWT authentication.*
 
 ## Key Features ✨
@@ -25,11 +25,11 @@ Node.js, Express, MongoDB (Mongoose), JWT, BcryptJS
 Swagger (API docs), Postman (testing)
 
 ## Screenshots 📸
-| ![Register Page](https://prnt.sc/zx0LJ_RyWeJn)    | ![Task Board](https://prnt.sc/XRN-gJunCQf6) |
-|---------------------------------------------------|---------------------------------------------|
-| *Figure 2: User registration form.*               | *Figure 3: Kanban board.*                   |
+| ![Register Page](https://imgur.com/q5HwMqX.png)   | ![Task Board](https://imgur.com/iMJPSFj.png) |
+|---------------------------------------------------|----------------------------------------------|
+| *Figure 2: User registration form.*               | *Figure 3: Kanban board.*                    |
 
-| ![Task Details](https://prnt.sc/OyzXywWnRbOo)        | ![Statistics](https://prnt.sc/nZFIE0lcWhLy)            |
+| ![Task Details](https://imgur.com/sfmgxhw.png)       | ![Statistics](https://imgur.com/TXpSDD0.png)           |
 |------------------------------------------------------|--------------------------------------------------------|
 | *Figure 4: Task details with time tracking.*         | *Figure 5: Dashboard with daily/monthly time reports.* |
 
