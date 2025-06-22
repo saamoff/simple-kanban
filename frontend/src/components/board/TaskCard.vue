@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { UserGroupIcon, ClockIcon } from '@heroicons/vue/24/outline'
 import { useCollaboratorStore } from '../../stores/collaboratorStore'
-import { useTimeTrackerStore } from '../../stores/timeTrakcerStore'
+import { useTimeTrackerStore } from '../../stores/timeTrackerStore'
 import TaskInfoModal from '../modals/TaskInfoModal.vue'
 
 const collaboratorStore = useCollaboratorStore()

@@ -1,6 +1,5 @@
 const TimeTracker = require('../models/timeTracker.model');
 
-// Start time tracking
 const startTime = async (req, res) => {
   try {
     const { timeZone } = req.body;

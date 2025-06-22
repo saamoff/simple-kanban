@@ -18,6 +18,7 @@ export const useTimeTrackerStore = defineStore('timeTracker', () => {
   const timerIntervals = ref<Record<string, number>>({})
   const dailyTotal = ref('00:00')
   const monthlyTotal = ref('00:00')
+  const dailyStats = ref([])
 
   const initTaskTracking = async (taskId: string) => {
     try {

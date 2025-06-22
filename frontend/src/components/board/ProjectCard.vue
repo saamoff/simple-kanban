@@ -22,14 +22,7 @@ onMounted(async () => {
   await collaboratorStore.fetchCollaborators()
 })
 
-watch(
-  () => taskStore.filters,
-  (newFilters) => {
-    console.log('Filters changed:', newFilters)
-    console.log('Filtered tasks:', taskStore.filteredTasks)
-  },
-  { deep: true },
-)
+watch(() => taskStore.filters, { deep: true })
 
 const refetchTasks = async () => {
   isNewTaskModalOpen.value = false

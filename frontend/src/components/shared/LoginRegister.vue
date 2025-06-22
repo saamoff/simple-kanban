@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useAuthStore } from '../../stores/authStore'
 import { useRouter } from 'vue-router'
 import AppInput from '../ui/AppInput.vue'
@@ -14,14 +14,87 @@ const form = ref({
   password: '',
 })
 const confirmPassword = ref('')
+const validationErrors = ref({
+  username: '',
+  password: '',
+  confirmPassword: '',
+})
+
+const isFormValid = computed(() => {
+  const hasUsername =
+    form.value.username.trim().length >= 3 &&
+    form.value.username.length <= 20 &&
+    /^[a-z0-9]+$/.test(form.value.username)
+  const hasValidPassword = form.value.password.length >= 8
+
+  if (isLoginMode.value) {
+    return hasUsername && hasValidPassword
+  } else {
+    const passwordsMatch = form.value.password === confirmPassword.value
+    return hasUsername && hasValidPassword && passwordsMatch
+  }
+})
 
 watch(isLoginMode, () => {
   authStore.error = null
+  clearValidationErrors()
 })
 
+const clearValidationErrors = () => {
+  validationErrors.value = {
+    username: '',
+    password: '',
+    confirmPassword: '',
+  }
+}
+
+const clearFields = () => {
+  form.value.username = ''
+  form.value.password = ''
+  confirmPassword.value = ''
+}
+
+const validateForm = () => {
+  let isValid = true
+  clearValidationErrors()
+
+  if (!form.value.username.trim()) {
+    validationErrors.value.username = 'Username is required'
+    isValid = false
+  } else if (form.value.username.length < 3) {
+    validationErrors.value.username = 'Username must be at least 3 characters'
+    isValid = false
+  } else if (form.value.username.length > 20) {
+    validationErrors.value.username = 'Username cannot exceed 20 characters'
+    isValid = false
+  } else if (!/^[a-z0-9]+$/.test(form.value.username)) {
+    validationErrors.value.username = 'Only lowercase letters and numbers allowed'
+    isValid = false
+  }
+
+  if (!form.value.password) {
+    validationErrors.value.password = 'Password is required'
+    isValid = false
+  } else if (form.value.password.length < 8) {
+    validationErrors.value.password = 'Password must be at least 8 characters'
+    isValid = false
+  }
+
+  if (!isLoginMode.value) {
+    if (!confirmPassword.value) {
+      validationErrors.value.confirmPassword = 'Please confirm your password'
+      isValid = false
+    } else if (form.value.password !== confirmPassword.value) {
+      validationErrors.value.confirmPassword = 'Passwords do not match'
+      isValid = false
+    }
+  }
+
+  return isValid
+}
+
 const handleSubmit = async () => {
-  if (!isLoginMode.value && form.value.password !== confirmPassword.value) {
-    authStore.error = 'Passwords do not match'
+  if (!validateForm()) {
     return
   }
 
@@ -36,10 +109,32 @@ const handleSubmit = async () => {
     const redirect = router.currentRoute.value.query.redirect || '/'
     router.push(redirect)
   } catch (error) {
-    console.log(error)
+    if (error.response) {
+      switch (error.response.status) {
+        case 400:
+          authStore.error = 'This username is already taken. Please choose another one.'
+          break
+        case 401:
+          authStore.error = 'Invalid username or password. Please try again.'
+          break
+        case 409:
+          authStore.error = 'This username is already registered. Please log in instead.'
+          break
+        case 500:
+          authStore.error = 'Server error. Please try again later.'
+          break
+        default:
+          authStore.error = 'An unexpected error occurred. Please try again.'
+      }
+    } else if (error.request) {
+      authStore.error = 'Network error. Please check your internet connection.'
+    } else {
+      authStore.error = 'An error occurred. Please try again.'
+    }
   }
 }
 </script>
+
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md">
@@ -48,7 +143,12 @@ const handleSubmit = async () => {
       </div>
       <div class="flex border-b border-gray-200">
         <button
-          @click="isLoginMode = true"
+          @click="
+            () => {
+              isLoginMode = true
+              clearFields()
+            }
+          "
           :class="[
             'flex-1 py-2 px-4 font-medium text-sm focus:outline-none',
             isLoginMode
@@ -59,7 +159,12 @@ const handleSubmit = async () => {
           Login
         </button>
         <button
-          @click="isLoginMode = false"
+          @click="
+            () => {
+              isLoginMode = false
+              clearFields()
+            }
+          "
           :class="[
             'flex-1 py-2 px-4 font-medium text-sm focus:outline-none',
             !isLoginMode
@@ -75,17 +180,20 @@ const handleSubmit = async () => {
           <AppInput
             label="Username"
             inputType="input"
-            placeHolder="Your Username"
+            :placeHolder="isLoginMode ? 'Your Username' : 'Username (3-20 lowercase characters)'"
             required
             v-model="form.username"
+            :error="validationErrors.username"
+            @input="form.username = form.username.toLowerCase().replace(/[^a-z0-9]/g, '')"
           />
           <AppInput
             label="Password"
             inputType="input"
             type="password"
-            placeHolder="Your Password"
+            :placeHolder="isLoginMode ? 'Your Password' : 'Password (At Least 8 Characters)'"
             required
             v-model="form.password"
+            :error="validationErrors.password"
           />
           <div v-if="!isLoginMode">
             <AppInput
@@ -95,11 +203,18 @@ const handleSubmit = async () => {
               placeHolder="Confirm Your Password"
               required
               v-model="confirmPassword"
+              :error="validationErrors.confirmPassword"
             />
           </div>
         </div>
-        <div v-if="authStore.error" class="text-red-500 text-sm text-center">
+        <div v-if="authStore.error" class="p-3 bg-red-50 text-red-600 text-sm rounded-md">
           {{ authStore.error }}
+        </div>
+        <div
+          v-if="!isLoginMode && authStore.success"
+          class="p-3 bg-green-50 text-green-600 text-sm rounded-md"
+        >
+          {{ authStore.success }}
         </div>
         <div>
           <AppButton
@@ -107,8 +222,36 @@ const handleSubmit = async () => {
             type="submit"
             btnClass="primary"
             :isLoading="authStore.isLoading"
-            :disabled="authStore.isLoading"
+            :disabled="authStore.isLoading || !isFormValid"
           />
+        </div>
+        <div v-if="isLoginMode" class="text-center text-sm text-gray-500">
+          Don't have an account?
+          <button
+            @click="
+              () => {
+                isLoginMode = false
+                clearFields()
+              }
+            "
+            class="text-blue-500 hover:text-blue-700 focus:outline-none"
+          >
+            Register here
+          </button>
+        </div>
+        <div v-else class="text-center text-sm text-gray-500">
+          Already have an account?
+          <button
+            @click="
+              () => {
+                isLoginMode = true
+                clearFields()
+              }
+            "
+            class="text-blue-500 hover:text-blue-700 focus:outline-none"
+          >
+            Login here
+          </button>
         </div>
       </form>
     </div>

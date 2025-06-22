@@ -76,7 +76,6 @@ watch(isEditMode, (newVal) => {
       projectId: currentTask?.project?._id,
       collaborators: currentTask?.collaborators?.map((c) => c._id) || [],
     }
-    console.log('Initial projectId:', formData.value.projectId)
     initialFormData.value = JSON.parse(JSON.stringify(formData.value))
   } else {
     initialFormData.value = null

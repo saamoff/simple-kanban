@@ -16,12 +16,11 @@ const handleLogout = () => {
   <div class="min-h-screen bg-gray-100">
     <header class="bg-white shadow-sm" v-if="authStore.isAuthenticated">
       <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
-        <img src="./assets/logo.svg" alt="Simple Kanban" />
+        <button @click="router.push('/')" class="cursor-pointer">
+          <img src="./assets/logo.svg" alt="Simple Kanban" />
+        </button>
         <div class="flex items-center space-x-4">
-          <span class="text-sm text-gray-500 hidden sm:block text-center"
-            >Logged in as
-            <span class="text-blue-500 hover:underline">{{ authStore.user?.username }}</span></span
-          >
+          <AppButton title="Statistics" btnClass="secondary" @click="router.push('/stats')" />
           <AppButton
             title="Logout"
             :icon="ArrowLeftEndOnRectangleIcon"

@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, onUnmounted } from 'vue'
-import { useTimeTrackerStore } from '../../stores/timeTrakcerStore'
+import { useTimeTrackerStore } from '../../stores/timeTrackerStore'
 import { ClockIcon } from '@heroicons/vue/24/outline'
 import { PlayIcon, StopIcon } from '@heroicons/vue/24/solid'
 import AppButton from '../ui/AppButton.vue'
