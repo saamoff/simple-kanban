@@ -2,9 +2,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { UserGroupIcon, ClockIcon } from '@heroicons/vue/24/outline'
 import { useCollaboratorStore } from '../../stores/collaboratorStore'
+import { useTimeTrackerStore } from '../../stores/timeTrakcerStore'
 import TaskInfoModal from '../modals/TaskInfoModal.vue'
 
 const collaboratorStore = useCollaboratorStore()
+const timeTrackerStore = useTimeTrackerStore()
+
 const props = defineProps({
   id: {
     type: [String, Number],
@@ -26,21 +29,52 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
-  timeSpent: {
-    type: String,
-    default: '0h 0m',
-  },
   status: {
     type: String,
     required: true,
   },
 })
 
+const showTooltip = ref(false)
+const isModalOpen = ref(false)
+const totalTimeSpent = ref('0h 0m')
+
 onMounted(async () => {
   if (collaboratorStore.collaborators.length === 0) {
     await collaboratorStore.fetchCollaborators()
   }
+
+  await fetchTimeSpent()
 })
+
+const fetchTimeSpent = async () => {
+  try {
+    const response = await timeTrackerStore.getTimeTrackers(props.id)
+    const trackers = response.data
+
+    const totalMs = trackers.reduce((total, tracker) => {
+      if (tracker.endDate) {
+        return total + (new Date(tracker.endDate) - new Date(tracker.startDate))
+      }
+      return total
+    }, 0)
+    totalTimeSpent.value = formatTime(totalMs)
+  } catch (error) {
+    console.error('Error fetching time spent:', error)
+    totalTimeSpent.value = '0h 0m'
+  }
+}
+
+const formatTime = (ms) => {
+  const totalSeconds = Math.floor(ms / 1000)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`
+  }
+  return `${minutes}m`
+}
 
 const collaboratorNames = computed(() => {
   if (!props.collaborators || !props.collaborators.length) return []
@@ -53,9 +87,6 @@ const collaboratorNames = computed(() => {
     })
     .filter((name) => name !== 'Unknown')
 })
-
-const showTooltip = ref(false)
-const isModalOpen = ref(false)
 
 const emit = defineEmits(['dragstart', 'dragend'])
 
@@ -131,7 +162,7 @@ const handleDragEnd = () => {
 
         <span class="inline-flex items-center text-xs text-gray-500">
           <ClockIcon class="w-4 h-4 mr-1" />
-          <span class="hidden sm:block">Time Spent:&nbsp;</span>{{ timeSpent }}
+          <span class="hidden sm:block">Time Spent:&nbsp;</span>{{ totalTimeSpent }}
         </span>
       </div>
     </div>
@@ -142,15 +173,18 @@ const handleDragEnd = () => {
       :title="title"
       :description="description"
       :collaborators="collaboratorNames"
-      :time-spent="timeSpent"
+      :time-spent="totalTimeSpent"
       :status="status"
       @close="isModalOpen = false"
     />
   </div>
 </template>
+
 <style scoped>
 .draggable-task {
   cursor: grab;
+  touch-action: none;
+  transition: all 0.2s ease;
 }
 .draggable-task:active {
   cursor: grabbing;

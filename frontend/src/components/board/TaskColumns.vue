@@ -43,19 +43,23 @@ const emit = defineEmits(['task-dropped'])
 
 const handleDragOver = (e) => {
   e.preventDefault()
-  e.currentTarget.classList.add('bg-gray-50')
+  e.currentTarget.classList.add('drag-over')
 }
 
 const handleDragLeave = (e) => {
   e.preventDefault()
-  e.currentTarget.classList.remove('bg-gray-50')
+  e.currentTarget.classList.remove('drag-over')
 }
 
 const handleDrop = async (e) => {
   e.preventDefault()
-  e.currentTarget.classList.remove('bg-gray-50')
+  e.currentTarget.classList.remove('drag-over')
 
-  const taskId = e.dataTransfer.getData('taskId')
+  const taskId =
+    e.dataTransfer?.getData('taskId') ||
+    (e.dataTransfer?.getData && e.dataTransfer.getData()) ||
+    e.target.closest('.draggable-task')?.dataset.taskId
+
   if (taskId) {
     try {
       await taskStore.updateTaskStatus(taskId, props.type)
@@ -69,7 +73,7 @@ const handleDrop = async (e) => {
 
 <template>
   <section
-    class="w-full h-full p-5 bg-white rounded-lg shadow-md flex flex-col"
+    class="w-full h-full p-5 bg-white rounded-lg shadow-md flex flex-col dropzone"
     :class="{
       'border-t-4 border-blue-500': type === 'todo',
       'border-t-4 border-yellow-500': type === 'inprogress',

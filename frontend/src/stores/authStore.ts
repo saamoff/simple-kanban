@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
 import api from '../services/api.js'
 
 interface User {
@@ -6,97 +7,100 @@ interface User {
   username: string
 }
 
-interface AuthState {
-  user: User | null
-  token: string | null
-  isLoading: boolean
-  error: string | null
-  isAuthenticated: boolean
-}
+export const useAuthStore = defineStore('auth', () => {
+  const user = ref<User | null>(null)
+  const token = ref(localStorage.getItem('token') || null)
+  const isLoading = ref(false)
+  const error = ref<string | null>(null)
+  const isAuthenticated = ref(false)
 
-export const useAuthStore = defineStore('auth', {
-  state: (): AuthState => ({
-    user: null,
-    token: localStorage.getItem('token') || null,
-    isLoading: false,
-    error: null,
-    isAuthenticated: false,
-  }),
+  const currentUser = computed(() => user.value)
+  const authError = computed(() => error.value)
+  const loading = computed(() => isLoading.value)
 
-  actions: {
-    async initialize() {
-      if (this.token) {
-        try {
-          await this.validateToken()
-        } catch (error) {
-          this.logout()
-        }
-      }
-    },
-    async login(credentials: { username: string; password: string }) {
-      this.isLoading = true
-      this.error = null
+  async function initialize() {
+    if (token.value) {
       try {
-        const response = await api.UserService.login(credentials)
-        this.user = response.data.user
-        this.token = response.data.token
-        this.isAuthenticated = true
-        localStorage.setItem('token', response.data.token)
-
-        return response.data
-      } catch (error: any) {
-        this.error = error.response?.data?.message || 'Login failed'
-        throw error
-      } finally {
-        this.isLoading = false
-      }
-    },
-
-    async register(userData: { username: string; password: string }) {
-      this.isLoading = true
-      this.error = null
-      try {
-        const response = await api.UserService.register(userData)
-        return response.data
-      } catch (error: any) {
-        this.error = error.response?.data?.message || 'Registration failed'
-        throw error
-      } finally {
-        this.isLoading = false
-      }
-    },
-
-    async validateToken() {
-      if (!this.token) {
-        this.isAuthenticated = false
-        return false
-      }
-
-      this.isLoading = true
-      try {
-        const response = await api.UserService.validateToken()
-        this.user = response.data.user
-        this.isAuthenticated = true
-        return true
+        await validateToken()
       } catch (error) {
-        this.logout()
-        return false
-      } finally {
-        this.isLoading = false
+        logout()
       }
-    },
+    }
+  }
 
-    logout() {
-      this.user = null
-      this.token = null
-      this.isAuthenticated = false
-      localStorage.removeItem('token')
-    },
-  },
+  async function login(credentials: { username: string; password: string }) {
+    isLoading.value = true
+    error.value = null
+    try {
+      const response = await api.UserService.login(credentials)
+      user.value = response.data.user
+      token.value = response.data.token
+      isAuthenticated.value = true
+      localStorage.setItem('token', response.data.token)
 
-  getters: {
-    currentUser: (state) => state.user,
-    authError: (state) => state.error,
-    loading: (state) => state.isLoading,
-  },
+      return response.data
+    } catch (error: any) {
+      error.value = error.response?.data?.message || 'Login failed'
+      throw error
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  async function register(userData: { username: string; password: string }) {
+    isLoading.value = true
+    error.value = null
+    try {
+      const response = await api.UserService.register(userData)
+      return response.data
+    } catch (error: any) {
+      error.value = error.response?.data?.message || 'Registration failed'
+      throw error
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  async function validateToken() {
+    if (!token.value) {
+      isAuthenticated.value = false
+      return false
+    }
+
+    isLoading.value = true
+    try {
+      const response = await api.UserService.validateToken()
+      user.value = response.data.user
+      isAuthenticated.value = true
+      return true
+    } catch (error) {
+      logout()
+      return false
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  function logout() {
+    user.value = null
+    token.value = null
+    isAuthenticated.value = false
+    localStorage.removeItem('token')
+  }
+
+  return {
+    user,
+    token,
+    isLoading,
+    error,
+    isAuthenticated,
+    currentUser,
+    authError,
+    loading,
+    initialize,
+    login,
+    register,
+    validateToken,
+    logout,
+  }
 })

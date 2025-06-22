@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import AppButton from '../ui/AppButton.vue'
 import NewProjectModal from '../modals/NewProjectModal.vue'
 import EditProjectsModal from '../modals/EditProjectsModal.vue'
+import { PencilSquareIcon } from '@heroicons/vue/24/solid'
 
 const isNewProjectModalOpen = ref(false)
 const isEditProjectModalOpen = ref(false)
@@ -10,11 +11,16 @@ const isEditProjectModalOpen = ref(false)
 <template>
   <div class="p-4 flex gap-2">
     <AppButton
-      title="Create New Project"
+      title="+ Create New Project"
       btnClass="primary"
       @click="isNewProjectModalOpen = true"
     />
-    <AppButton title="Edit Projects" btnClass="secondary" @click="isEditProjectModalOpen = true" />
+    <AppButton
+      title="Edit Projects"
+      :icon="PencilSquareIcon"
+      btnClass="secondary"
+      @click="isEditProjectModalOpen = true"
+    />
   </div>
   <NewProjectModal v-if="isNewProjectModalOpen" @close="isNewProjectModalOpen = false" />
   <EditProjectsModal v-if="isEditProjectModalOpen" @close="isEditProjectModalOpen = false" />

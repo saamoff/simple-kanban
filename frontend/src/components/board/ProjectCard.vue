@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, nextTick } from 'vue'
 import { useProjectStore } from '../../stores/projectStore'
 import { useTaskStore } from '../../stores/taskStore'
 import { useCollaboratorStore } from '../../stores/collaboratorStore'
@@ -31,8 +31,10 @@ watch(
   { deep: true },
 )
 
-const refetchTasks = () => {
-  taskStore.fetchTasks()
+const refetchTasks = async () => {
+  isNewTaskModalOpen.value = false
+  await nextTick()
+  await taskStore.fetchTasks()
 }
 
 const handleApplyFilters = (filters) => {

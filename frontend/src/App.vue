@@ -1,6 +1,7 @@
 <script setup>
 import { useAuthStore } from './stores/authStore'
 import { useRouter } from 'vue-router'
+import { ArrowLeftEndOnRectangleIcon } from '@heroicons/vue/24/outline'
 import AppButton from './components/ui/AppButton.vue'
 
 const authStore = useAuthStore()
@@ -21,7 +22,12 @@ const handleLogout = () => {
             >Logged in as
             <span class="text-blue-500 hover:underline">{{ authStore.user?.username }}</span></span
           >
-          <AppButton title="Logout" btn-class="red-outline" @click="handleLogout" />
+          <AppButton
+            title="Logout"
+            :icon="ArrowLeftEndOnRectangleIcon"
+            btnClass="red-outline"
+            @click="handleLogout"
+          />
         </div>
       </div>
     </header>

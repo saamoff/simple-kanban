@@ -98,9 +98,28 @@ const CollaboratorService = {
   },
 }
 
+const TimeTrackingService = {
+  startTracking(taskId, timeZone) {
+    return apiClient.post(`/time-trackers/tasks/${taskId}/start`, { timeZone })
+  },
+  stopTracking(taskId) {
+    return apiClient.post(`/time-trackers/tasks/${taskId}/stop`)
+  },
+  getTimeTrackers(taskId) {
+    return apiClient.get(`/time-trackers/tasks/${taskId}`)
+  },
+  getActiveTracking(taskId) {
+    return apiClient.get(`/time-trackers/tasks/${taskId}/active`)
+  },
+  getSummary() {
+    return apiClient.get('/time-trackers/summary')
+  },
+}
+
 export default {
   tasks: TaskService,
   projects: ProjectService,
   UserService,
   collaborators: CollaboratorService,
+  timeTracking: TimeTrackingService,
 }

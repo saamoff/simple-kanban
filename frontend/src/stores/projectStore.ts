@@ -1,120 +1,120 @@
 import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
 import api from '../services/api.js'
 import type { Project } from '../types/project.ts'
-import { useTaskStore } from './taskStore.js'
 
-interface ProjectState {
-  projects: Project[]
-  currentProject: Project | null
-  isLoading: boolean
-  error: string | null
-}
+export const useProjectStore = defineStore('project', () => {
+  const projects = ref<Project[]>([])
+  const currentProject = ref<Project | null>(null)
+  const isLoading = ref(false)
+  const error = ref<string | null>(null)
 
-export const useProjectStore = defineStore('project', {
-  state: (): ProjectState => ({
-    projects: [],
-    currentProject: null,
-    isLoading: false,
-    error: null,
-  }),
+  const getProjectById = computed(() => (id: string) => {
+    return projects.value.find((project) => project._id === id)
+  })
 
-  actions: {
-    async fetchProjects() {
-      this.isLoading = true
-      try {
-        const response = await api.projects.getProjects()
-        this.projects = response.data
-      } catch (err) {
-        this.error = err.message || 'Failed to fetch projects'
-      } finally {
-        this.isLoading = false
+  async function fetchProjects() {
+    isLoading.value = true
+    try {
+      const response = await api.projects.getProjects()
+      projects.value = response.data
+    } catch (err) {
+      error.value = err.message || 'Failed to fetch projects'
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  async function fetchProjectWithTasks(id: string) {
+    isLoading.value = true
+    try {
+      const [projectRes, tasksRes] = await Promise.all([
+        api.projects.getProject(id),
+        api.projects.getProjectTasks(id),
+      ])
+
+      const project = projectRes.data
+      project.tasks = tasksRes.data
+
+      const index = projects.value.findIndex((p) => p._id === id)
+      if (index !== -1) {
+        projects.value[index] = project
+      } else {
+        projects.value.push(project)
       }
-    },
 
-    async fetchProjectWithTasks(id: string) {
-      this.isLoading = true
-      try {
-        const [projectRes, tasksRes] = await Promise.all([
-          api.projects.getProject(id),
-          api.projects.getProjectTasks(id),
-        ])
+      return project
+    } catch (err) {
+      error.value = err.message || 'Failed to fetch project with tasks'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
 
-        const project = projectRes.data
-        project.tasks = tasksRes.data
-
-        const index = this.projects.findIndex((p) => p._id === id)
-        if (index !== -1) {
-          this.projects[index] = project
-        } else {
-          this.projects.push(project)
-        }
-
-        return project
-      } catch (err) {
-        this.error = err.message || 'Failed to fetch project with tasks'
-        throw err
-      } finally {
-        this.isLoading = false
+  async function createProject(projectData: Omit<Project, '_id' | 'createdAt' | 'updatedAt'>) {
+    isLoading.value = true
+    try {
+      const payload = {
+        name: projectData.name || '',
       }
-    },
+      const response = await api.projects.createProject(payload)
+      projects.value.push(response.data)
+      return response.data
+    } catch (err) {
+      error.value = err.message || 'Failed to create project'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
 
-    async createProject(projectData: Omit<Project, '_id' | 'createdAt' | 'updatedAt'>) {
-      this.isLoading = true
-      try {
-        const payload = {
-          name: projectData.name || '',
-        }
-        const response = await api.projects.createProject(payload)
-        this.projects.push(response.data)
-        return response.data
-      } catch (err) {
-        this.error = err.message || 'Failed to create project'
-        throw err
-      } finally {
-        this.isLoading = false
+  async function updateProject(id: string, updateData: Partial<Project>) {
+    isLoading.value = true
+    try {
+      const response = await api.projects.updateProject(id, updateData)
+      const index = projects.value.findIndex((p: Project) => p._id === id)
+      if (index !== -1) {
+        projects.value[index] = response.data
       }
-    },
-
-    async updateProject(id: string, updateData: Partial<Project>) {
-      this.isLoading = true
-      try {
-        const response = await api.projects.updateProject(id, updateData)
-        const index = this.projects.findIndex((p: Project) => p._id === id)
-        if (index !== -1) {
-          this.projects[index] = response.data
-        }
-        if (this.currentProject?._id === id) {
-          this.currentProject = response.data
-        }
-        return response.data
-      } catch (err) {
-        this.error = err.message || 'Failed to update project'
-        throw err
-      } finally {
-        this.isLoading = false
+      if (currentProject.value?._id === id) {
+        currentProject.value = response.data
       }
-    },
+      return response.data
+    } catch (err) {
+      error.value = err.message || 'Failed to update project'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
 
-    async deleteProject(id: string) {
-      this.isLoading = true
-      try {
-        await api.projects.deleteProject(id)
-        this.projects = this.projects.filter((t) => t._id !== id)
-        if (this.currentProject?._id === id) {
-          this.currentProject = null
-        }
-      } catch (err) {
-        this.error = err.message || 'Failed to delete project'
-        throw err
-      } finally {
-        this.isLoading = false
+  async function deleteProject(id: string) {
+    isLoading.value = true
+    try {
+      await api.projects.deleteProject(id)
+      projects.value = projects.value.filter((t) => t._id !== id)
+      if (currentProject.value?._id === id) {
+        currentProject.value = null
       }
-    },
-  },
+    } catch (err) {
+      error.value = err.message || 'Failed to delete project'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
 
-  getters: {
-    getProjectById: (state) => (id: string) => {
-      return state.projects.find((project) => project._id === id)
-    },
-  },
+  return {
+    projects,
+    currentProject,
+    isLoading,
+    error,
+    getProjectById,
+    fetchProjects,
+    fetchProjectWithTasks,
+    createProject,
+    updateProject,
+    deleteProject,
+  }
 })

@@ -8,25 +8,21 @@ const timeTrackerSchema = new mongoose.Schema(
     },
     endDate: {
       type: Date,
+      required: false,
       validate: {
         validator: function(value) {
-          return value > this.startDate;
+          return !value || value > this.startDate;
         },
         message: 'End date must be after start date',
       },
     },
-    timeZoneId: {
+    timeZone: {
       type: String,
       required: true,
     },
     task: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Task',
-      required: true,
-    },
-    collaborator: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Collaborator',
       required: true,
     },
   },
@@ -36,8 +32,8 @@ const timeTrackerSchema = new mongoose.Schema(
 );
 
 timeTrackerSchema.index(
-  { collaborator: 1, startDate: 1, endDate: 1 },
-  { unique: true }
+  { task: 1, startDate: 1, endDate: 1 },
+  { unique: true, partialFilterExpression: { endDate: { $exists: true } } }
 );
 
 const TimeTracker = mongoose.model('TimeTracker', timeTrackerSchema);

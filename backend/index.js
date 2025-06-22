@@ -9,6 +9,7 @@ const taskRoute = require("./src/routes/task.route.js")
 const projectRoute = require("./src/routes/project.route.js")
 const collaboratorRoute = require("./src/routes/collaborator.route.js")
 const authRoute = require("./src/routes/auth.route.js")
+const timeTrackerRoute = require("./src/routes/timeTracker.route.js")
 
 app.use(express.json());
 app.use(express.urlencoded({extended: false}));
@@ -19,6 +20,7 @@ app.use("/api/tasks", taskRoute);
 app.use("/api/projects", projectRoute);
 app.use("/api/collaborators", collaboratorRoute);
 app.use("/api/auth", authRoute)
+app.use("/api", timeTrackerRoute)
 
 mongoose.connect(process.env.DATABASE_URL)
   .then(() => {

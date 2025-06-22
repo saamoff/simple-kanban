@@ -1,12 +1,15 @@
 <script setup>
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
 import { useTaskStore } from '../../stores/taskStore'
+import { PencilSquareIcon, TrashIcon, BookmarkIcon, UserIcon } from '@heroicons/vue/24/solid'
+import { ArchiveBoxXMarkIcon } from '@heroicons/vue/24/outline'
 import AppDialog from '../ui/AppDialog.vue'
 import AppButton from '../ui/AppButton.vue'
 import AppInput from '../ui/AppInput.vue'
 import ModalContainer from './ModalContainer.vue'
 import ProjectSelect from '../shared/ProjectSelect.vue'
 import CollaboratorSelect from '../shared/CollaboratorSelect.vue'
+import TimeTracker from '../shared/TimeTracker.vue'
 
 const taskStore = useTaskStore()
 const isEditMode = ref(false)
@@ -203,14 +206,25 @@ function removeTask() {
         </option>
       </select>
     </div>
-    <div v-if="!isEditMode" class="mb-4">
+    <div v-if="!isEditMode">
       <h3 class="text-2xl font-bold mb-1">Collaborators</h3>
-      <p v-if="!collaborators || collaborators.length === 0" class="text-gray-500">
-        There are no Collaborators associated with this Task.
-      </p>
-      <li v-for="(name, index) in collaborators" :key="index" class="py-1 text-blue-500">
-        {{ name }}
-      </li>
+      <div class="mb-4 bg-gray-100 rounded-lg p-4 shadow-md flex gap-2">
+        <p v-if="!collaborators || collaborators.length === 0" class="text-gray-500">
+          There are no Collaborators associated with this Task.
+        </p>
+        <span
+          v-for="(name, index) in collaborators"
+          :key="index"
+          class="bg-blue-500 text-white flex items-center gap-1 p-2 rounded-md cursor-default"
+        >
+          <UserIcon class="h-4 w-4" />
+          {{ name }}
+        </span>
+      </div>
+    </div>
+    <div v-if="!isEditMode" class="mb-6">
+      <h3 class="text-2xl font-bold mb-1">Time Tracker</h3>
+      <TimeTracker :taskId="props.id" />
     </div>
     <div v-if="isEditMode">
       <AppInput
@@ -235,10 +249,16 @@ function removeTask() {
         @update:modelValue="handleCollaboratorUpdate"
       />
       <div class="w-full flex gap-2 mt-4">
-        <AppButton title="Cancel Changes" btnClass="secondary" @click="clearFields" />
+        <AppButton
+          title="Cancel Changes"
+          :icon="ArchiveBoxXMarkIcon"
+          btnClass="secondary"
+          @click="clearFields"
+        />
         <AppButton
           title="Save Changes"
           btnClass="primary"
+          :icon="BookmarkIcon"
           @click="handleSubmit"
           :loading="isLoading"
           :disabled="!hasChanges"
@@ -246,8 +266,13 @@ function removeTask() {
       </div>
     </div>
     <div v-if="!isEditMode" class="w-full flex gap-2">
-      <AppButton title="Edit Task" btnClass="primary" @click="isEditMode = true" />
-      <AppButton title="Remove Task" btnClass="red-outline" @click="removeTask" />
+      <AppButton
+        title="Edit Task"
+        :icon="PencilSquareIcon"
+        btnClass="primary"
+        @click="isEditMode = true"
+      />
+      <AppButton title="Remove Task" :icon="TrashIcon" btnClass="red-outline" @click="removeTask" />
     </div>
     <AppDialog
       v-if="isDialogOpen"
