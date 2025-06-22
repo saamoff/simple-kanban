@@ -44,7 +44,7 @@ Swagger (API docs), Postman (testing)
    ```bash
     git clone https://github.com/saamoff/simple-kanban
     cd simple-kanban
-  ```
+   ```
 2. **Backend Setup**:
   ```bash
     cd backend
