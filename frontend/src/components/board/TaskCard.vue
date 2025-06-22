@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { UserGroupIcon, ClockIcon } from '@heroicons/vue/24/outline'
 import { useCollaboratorStore } from '../../stores/collaboratorStore'
 import { useTimeTrackerStore } from '../../stores/timeTrakcerStore'
@@ -38,6 +38,9 @@ const props = defineProps({
 const showTooltip = ref(false)
 const isModalOpen = ref(false)
 const totalTimeSpent = ref('0h 0m')
+const isTracking = ref(false)
+
+let updateInterval = null
 
 onMounted(async () => {
   if (collaboratorStore.collaborators.length === 0) {
@@ -45,25 +48,73 @@ onMounted(async () => {
   }
 
   await fetchTimeSpent()
+  checkActiveTimer()
 })
+
+onUnmounted(() => {
+  if (updateInterval) {
+    clearInterval(updateInterval)
+  }
+})
+
+const checkActiveTimer = () => {
+  isTracking.value = timeTrackerStore.isTracking(props.id)
+
+  if (isTracking.value) {
+    startUpdatingTime()
+  }
+}
+
+const startUpdatingTime = () => {
+  updateInterval = setInterval(async () => {
+    await fetchTimeSpent()
+  }, 1000)
+}
 
 const fetchTimeSpent = async () => {
   try {
     const response = await timeTrackerStore.getTimeTrackers(props.id)
     const trackers = response.data
 
-    const totalMs = trackers.reduce((total, tracker) => {
+    let totalMs = trackers.reduce((total, tracker) => {
       if (tracker.endDate) {
         return total + (new Date(tracker.endDate) - new Date(tracker.startDate))
       }
       return total
     }, 0)
+
+    if (timeTrackerStore.isTracking(props.id)) {
+      const activeTracking = timeTrackerStore.activeTrackings[props.id]
+      if (activeTracking) {
+        totalMs += Date.now() - new Date(activeTracking.startDate).getTime()
+      }
+    }
+
     totalTimeSpent.value = formatTime(totalMs)
   } catch (error) {
     console.error('Error fetching time spent:', error)
     totalTimeSpent.value = '0h 0m'
   }
 }
+
+watch(
+  () => timeTrackerStore.activeTrackings,
+  (newVal) => {
+    const isNowTracking = !!newVal[props.id]
+    if (isNowTracking && !isTracking.value) {
+      isTracking.value = true
+      startUpdatingTime()
+    } else if (!isNowTracking && isTracking.value) {
+      isTracking.value = false
+      if (updateInterval) {
+        clearInterval(updateInterval)
+        updateInterval = null
+      }
+      fetchTimeSpent()
+    }
+  },
+  { deep: true },
+)
 
 const formatTime = (ms) => {
   const totalSeconds = Math.floor(ms / 1000)
@@ -160,8 +211,15 @@ const handleDragEnd = () => {
           </Transition>
         </div>
 
-        <span class="inline-flex items-center text-xs text-gray-500">
-          <ClockIcon class="w-4 h-4 mr-1" />
+        <span
+          class="inline-flex items-center text-xs text-gray-500"
+          :class="isTracking ? 'text-green-500 font-semibold' : ''"
+        >
+          <span v-if="isTracking" class="relative mr-4 mb-3">
+            <span class="absolute h-3 w-3 rounded-full bg-green-500 opacity-75 animate-ping"></span>
+            <span class="absolute h-3 w-3 rounded-full bg-green-500"></span>
+          </span>
+          <ClockIcon v-else class="w-4 h-4 mr-1" />
           <span class="hidden sm:block">Time Spent:&nbsp;</span>{{ totalTimeSpent }}
         </span>
       </div>

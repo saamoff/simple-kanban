@@ -1,4 +1,3 @@
-// timeTrakcerStore.ts
 import { defineStore } from 'pinia'
 import { ref, onMounted } from 'vue'
 import api from '../services/api'

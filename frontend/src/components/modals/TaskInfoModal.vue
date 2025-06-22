@@ -192,7 +192,7 @@ function removeTask() {
     :title="isEditMode ? 'Editing Task' : title"
     :description="isEditMode ? '' : description"
   >
-    <div class="mb-4" v-if="isMobile">
+    <div class="mb-4" v-if="isMobile && !isEditMode">
       <label class="block text-sm font-medium text-gray-700 mb-1">Task Status</label>
       <select
         :value="status"

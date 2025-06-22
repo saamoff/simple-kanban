@@ -3,7 +3,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require('cors')
 const app = express();
-const setupSwagger = require('./swagger')
+const setupSwagger = require('./swagger.js')
 
 const taskRoute = require("./src/routes/task.route.js")
 const projectRoute = require("./src/routes/project.route.js")
