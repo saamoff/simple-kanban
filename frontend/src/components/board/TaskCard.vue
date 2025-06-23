@@ -215,11 +215,7 @@ const handleDragEnd = () => {
           class="inline-flex items-center text-xs text-gray-500"
           :class="isTracking ? 'text-green-500 font-semibold' : ''"
         >
-          <span v-if="isTracking" class="relative mr-4 mb-3">
-            <span class="absolute h-3 w-3 rounded-full bg-green-500 opacity-75 animate-ping"></span>
-            <span class="absolute h-3 w-3 rounded-full bg-green-500"></span>
-          </span>
-          <ClockIcon v-else class="w-4 h-4 mr-1" />
+          <ClockIcon class="w-4 h-4 mr-1" />
           <span class="hidden sm:block">Time Spent:&nbsp;</span>{{ totalTimeSpent }}
         </span>
       </div>

@@ -19,6 +19,12 @@ const validationErrors = ref({
   password: '',
   confirmPassword: '',
 })
+const touchedFields = ref({
+  username: false,
+  password: false,
+  confirmPassword: false,
+})
+
 
 const isFormValid = computed(() => {
   const hasUsername =
@@ -38,6 +44,24 @@ const isFormValid = computed(() => {
 watch(isLoginMode, () => {
   authStore.error = null
   clearValidationErrors()
+})
+
+watch(() => form.value.username, (newVal) => {
+  touchedFields.value.username = true
+  validateForm('username', newVal)
+})
+
+watch(() => form.value.password, (newVal) => {
+  touchedFields.value.password = true
+  validateForm('password', newVal)
+  if (!isLoginMode.value) {
+    validateForm('confirmPassword', confirmPassword.value)
+  }
+})
+
+watch(confirmPassword, (newVal) => {
+  touchedFields.value.confirmPassword = true
+  validateForm('confirmPassword', newVal)
 })
 
 const clearValidationErrors = () => {
@@ -109,28 +133,7 @@ const handleSubmit = async () => {
     const redirect = router.currentRoute.value.query.redirect || '/'
     router.push(redirect)
   } catch (error) {
-    if (error.response) {
-      switch (error.response.status) {
-        case 400:
-          authStore.error = 'This username is already taken. Please choose another one.'
-          break
-        case 401:
-          authStore.error = 'Invalid username or password. Please try again.'
-          break
-        case 409:
-          authStore.error = 'This username is already registered. Please log in instead.'
-          break
-        case 500:
-          authStore.error = 'Server error. Please try again later.'
-          break
-        default:
-          authStore.error = 'An unexpected error occurred. Please try again.'
-      }
-    } else if (error.request) {
-      authStore.error = 'Network error. Please check your internet connection.'
-    } else {
-      authStore.error = 'An error occurred. Please try again.'
-    }
+    console.error(error)
   }
 }
 </script>
@@ -177,24 +180,38 @@ const handleSubmit = async () => {
       </div>
       <form class="mt-8 space-y-6" @submit.prevent="handleSubmit">
         <div class="space-y-4">
-          <AppInput
-            label="Username"
-            inputType="input"
-            :placeHolder="isLoginMode ? 'Your Username' : 'Username (3-20 lowercase characters)'"
-            required
-            v-model="form.username"
-            :error="validationErrors.username"
-            @input="form.username = form.username.toLowerCase().replace(/[^a-z0-9]/g, '')"
-          />
-          <AppInput
-            label="Password"
-            inputType="input"
-            type="password"
-            :placeHolder="isLoginMode ? 'Your Password' : 'Password (At Least 8 Characters)'"
-            required
-            v-model="form.password"
-            :error="validationErrors.password"
-          />
+          <div>
+            <AppInput
+              label="Username"
+              inputType="input"
+              :placeHolder="isLoginMode ? 'Your Username' : 'Username (3-20 lowercase characters)'"
+              required
+              v-model="form.username"
+              @input="form.username = form.username.toLowerCase().replace(/[^a-z0-9]/g, '')"
+            />
+            <transition name="fade">
+              <p v-if="validationErrors.username && touchedFields.username"
+                 class="text-red-500 text-xs mt-1 transition-all duration-200">
+                {{ validationErrors.username }}
+              </p>
+            </transition>
+          </div>
+          <div>
+            <AppInput
+              label="Password"
+              inputType="input"
+              type="password"
+              :placeHolder="isLoginMode ? 'Your Password' : 'Password (At Least 8 Characters)'"
+              required
+              v-model="form.password"
+            />
+            <transition name="fade">
+              <p v-if="validationErrors.password && touchedFields.password"
+                 class="text-red-500 text-xs mt-1 transition-all duration-200">
+                {{ validationErrors.password }}
+              </p>
+            </transition>
+          </div>
           <div v-if="!isLoginMode">
             <AppInput
               label="Confirm Password"
@@ -203,8 +220,13 @@ const handleSubmit = async () => {
               placeHolder="Confirm Your Password"
               required
               v-model="confirmPassword"
-              :error="validationErrors.confirmPassword"
             />
+            <transition name="fade">
+              <p v-if="validationErrors.confirmPassword && touchedFields.confirmPassword"
+                 class="text-red-500 text-xs mt-1 transition-all duration-200">
+                {{ validationErrors.confirmPassword }}
+              </p>
+            </transition>
           </div>
         </div>
         <div v-if="authStore.error" class="p-3 bg-red-50 text-red-600 text-sm rounded-md">
