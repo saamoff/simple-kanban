@@ -1,0 +1,1009 @@
+swagger: '2.0'
+info:
+  title: API Documentation
+  version: '1.0'
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Collaborators
+    description: Collaborator management
+  - name: Projects
+    description: Project management endpoints
+  - name: Tasks
+    description: Task management endpoints
+  - name: Time Tracking
+    description: Time tracking management endpoints
+
+paths:
+  /api/auth/register:
+    post:
+      summary: Register a new user
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingFields:
+                  value:
+                    message: Username and password are required.
+                usernameExists:
+                  value:
+                    message: Username already in use.
+        '500':
+          description: Internal server error
+
+  /api/auth/login:
+    post:
+      summary: Authenticate a user
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: Username and password are required.
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: Invalid Credentials
+        '500':
+          description: Internal server error
+
+  /api/auth/validate:
+    get:
+      summary: Validate a JWT token
+      tags: [Authentication]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Token is valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenValidationResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                noToken:
+                  value:
+                    message: Token not provided.
+                invalidToken:
+                  value:
+                    message: Invalid or expired token.
+                userNotFound:
+                  value:
+                    message: User not found.
+        '500':
+          description: Internal server error
+
+  /api/collaborators:
+    get:
+      summary: Get all collaborators
+      tags: [Collaborators]
+      responses:
+        '200':
+          description: List of all collaborators
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CollaboratorWithUser'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      summary: Create a new collaborator
+      tags: [Collaborators]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Jane Smith
+                user:
+                  type: string
+                  example: 507f1f77bcf86cd799439012
+              required:
+                - name
+      responses:
+        '201':
+          description: Collaborator created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collaborator'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/collaborators/{id}/tasks:
+    get:
+      summary: Get all tasks assigned to a collaborator
+      tags: [Collaborators]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Collaborator ID
+      responses:
+        '200':
+          description: List of tasks assigned to the collaborator
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/projects:
+    get:
+      summary: Get all projects
+      tags: [Projects]
+      responses:
+        '200':
+          description: List of all projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProjectResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      summary: Create a new project
+      tags: [Projects]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Project'
+      responses:
+        '200':
+          description: Project created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/projects/{id}:
+    get:
+      summary: Get a project by ID
+      tags: [Projects]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Project ID
+      responses:
+        '200':
+          description: Project details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        '404':
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: Project not found.
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      summary: Update a project
+      tags: [Projects]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Project ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Project'
+      responses:
+        '200':
+          description: Project updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        '404':
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: Project not found.
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Delete a project and its tasks
+      tags: [Projects]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Project ID
+      responses:
+        '200':
+          description: Project and all related tasks deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+        '404':
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: Project not found.
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/projects/{id}/tasks:
+    get:
+      summary: Get all tasks for a project
+      tags: [Projects]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Project ID
+      responses:
+        '200':
+          description: List of tasks belonging to the project
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/tasks:
+    get:
+      summary: Get all tasks with populated collaborators
+      tags: [Tasks]
+      responses:
+        '200':
+          description: List of all tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PopulatedTask'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      summary: Create a new task
+      tags: [Tasks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Task'
+      responses:
+        '200':
+          description: Task created successfully with populated collaborators
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PopulatedTask'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/tasks/{id}:
+    get:
+      summary: Get a task by ID with populated collaborators
+      tags: [Tasks]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Task ID
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PopulatedTask'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: Task not found.
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      summary: Update a task
+      tags: [Tasks]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Task ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Task'
+      responses:
+        '200':
+          description: Task updated successfully with populated collaborators
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PopulatedTask'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: Task not found.
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Delete a task
+      tags: [Tasks]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Task ID
+      responses:
+        '200':
+          description: Task deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: Task not found.
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/tasks/{id}/status:
+    patch:
+      summary: Update task status
+      tags: [Tasks]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Task ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatusUpdate'
+      responses:
+        '200':
+          description: Task status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: Task not found
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/tasks/{taskId}/collaborators:
+    post:
+      summary: Associate collaborators with a task
+      tags: [Tasks]
+      parameters:
+        - in: path
+          name: taskId
+          schema:
+            type: string
+          required: true
+          description: Task ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollaboratorUpdate'
+      responses:
+        '200':
+          description: Collaborators associated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PopulatedTask'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: collaboratorIds must be an array
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/tasks/{taskId}/collaborators/{collaboratorId}:
+    delete:
+      summary: Remove a collaborator from a task
+      tags: [Tasks]
+      parameters:
+        - in: path
+          name: taskId
+          schema:
+            type: string
+          required: true
+          description: Task ID
+        - in: path
+          name: collaboratorId
+          schema:
+            type: string
+          required: true
+          description: Collaborator ID
+      responses:
+        '200':
+          description: Collaborator removed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PopulatedTask'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/time-trackers/tasks/{taskId}/start:
+    post:
+      summary: Start time tracking for a task
+      tags: [Time Tracking]
+      parameters:
+        - in: path
+          name: taskId
+          schema:
+            type: string
+          required: true
+          description: ID of the task to track time for
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TimeStartRequest'
+      responses:
+        '201':
+          description: Time tracking started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeTracker'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                alreadyTracking:
+                  value:
+                    error: Already tracking time for this task
+        '404':
+          description: Task not found
+
+  /api/time-trackers/tasks/{taskId}/stop:
+    post:
+      summary: Stop time tracking for a task
+      tags: [Time Tracking]
+      parameters:
+        - in: path
+          name: taskId
+          schema:
+            type: string
+          required: true
+          description: ID of the task to stop tracking
+      responses:
+        '200':
+          description: Time tracking stopped successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeTracker'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: No active time tracking found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: No active time tracking found
+
+  /api/time-trackers/tasks/{taskId}:
+    get:
+      summary: Get time tracking history for a task
+      tags: [Time Tracking]
+      parameters:
+        - in: path
+          name: taskId
+          schema:
+            type: string
+          required: true
+          description: ID of the task to get tracking history for
+      responses:
+        '200':
+          description: List of completed time tracking sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TimeTracker'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Task not found
+
+  /api/time-trackers/tasks/{taskId}/active:
+    get:
+      summary: Check active time tracking status for a task
+      tags: [Time Tracking]
+      parameters:
+        - in: path
+          name: taskId
+          schema:
+            type: string
+          required: true
+          description: ID of the task to check
+      responses:
+        '200':
+          description: Active tracking status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActiveTrackingStatus'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Task not found
+
+  /api/time-trackers/summary:
+    get:
+      summary: Get time tracking statistics
+      tags: [Time Tracking]
+      responses:
+        '200':
+          description: Time tracking statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeStats'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    User:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: johndoe
+        password:
+          type: string
+          format: password
+          example: securePassword123
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+              example: 507f1f77bcf86cd799439011
+            username:
+              type: string
+              example: johndoe
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+    TokenValidationResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+          example: true
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+              example: 507f1f77bcf86cd799439011
+            username:
+              type: string
+              example: johndoe
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Error message describing the issue
+    Collaborator:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 507f1f77bcf86cd799439011
+        name:
+          type: string
+          example: John Doe
+        user:
+          type: string
+          example: 507f1f77bcf86cd799439012
+        createdAt:
+          type: string
+          format: date-time
+          example: 2023-01-01T00:00:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2023-01-01T00:00:00Z
+    CollaboratorWithUser:
+      allOf:
+        - $ref: '#/components/schemas/Collaborator'
+        - type: object
+          properties:
+            user:
+              type: object
+              properties:
+                _id:
+                  type: string
+                username:
+                  type: string
+    Task:
+      type: object
+      properties:
+        _id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [todo, in-progress, done]
+        collaborators:
+          type: array
+          items:
+            type: string
+    Project:
+      type: object
+      required:
+        - name
+      properties:
+        _id:
+          type: string
+          example: 507f1f77bcf86cd799439011
+        name:
+          type: string
+          example: Website Redesign
+        description:
+          type: string
+          example: Complete redesign of company website
+        status:
+          type: string
+          enum: [active, completed, archived]
+          example: active
+        startDate:
+          type: string
+          format: date
+          example: 2023-01-01
+        endDate:
+          type: string
+          format: date
+          example: 2023-06-30
+        createdAt:
+          type: string
+          format: date-time
+          example: 2023-01-01T00:00:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2023-01-01T00:00:00Z
+    ProjectResponse:
+      allOf:
+        - $ref: '#/components/schemas/Project'
+        - type: object
+          properties:
+            __v:
+              type: number
+    DeleteResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Project and related tasks deleted.
+    PopulatedTask:
+      allOf:
+        - $ref: '#/components/schemas/Task'
+        - type: object
+          properties:
+            collaborators:
+              type: array
+              items:
+                type: object
+                properties:
+                  _id:
+                    type: string
+                  name:
+                    type: string
+    StatusUpdate:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: [todo, in-progress, done]
+    CollaboratorUpdate:
+      type: object
+      required:
+        - collaboratorIds
+      properties:
+        collaboratorIds:
+          type: array
+          items:
+            type: string
+    TimeTracker:
+      type: object
+      required:
+        - task
+        - startDate
+      properties:
+        _id:
+          type: string
+          example: 507f1f77bcf86cd799439011
+        task:
+          type: string
+          example: 507f1f77bcf86cd799439012
+        startDate:
+          type: string
+          format: date-time
+          example: 2023-06-15T09:30:00Z
+        endDate:
+          type: string
+          format: date-time
+          example: 2023-06-15T11:45:00Z
+        timeZone:
+          type: string
+          example: America/New_York
+        duration:
+          type: number
+          description: Duration in milliseconds (calculated field)
+          example: 8100000
+    TimeStartRequest:
+      type: object
+      required:
+        - timeZone
+      properties:
+        timeZone:
+          type: string
+          example: America/New_York
+    ActiveTrackingStatus:
+      type: object
+      properties:
+        isActive:
+          type: boolean
+          example: true
+        trackingData:
+          $ref: '#/components/schemas/TimeTracker'
+    TimeStats:
+      type: object
+      properties:
+        dailyTotal:
+          type: string
+          example: "02:30"
+        monthlyTotal:
+          type: string
+          example: "45:15"
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
