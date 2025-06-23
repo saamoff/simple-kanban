@@ -14,6 +14,25 @@ const startTime = async (req, res) => {
       return res.status(400).json({ error: "Already tracking time for this task" });
     }
 
+    const now = new Date();
+    const startOfDay = new Date(now.setHours(0, 0, 0, 0));
+    
+    const dailyTrackers = await TimeTracker.find({
+      task: taskId,
+      endDate: { $exists: true },
+      startDate: { $gte: startOfDay }
+    });
+
+    const dailyTotal = dailyTrackers.reduce((total, tracker) => {
+      return total + (tracker.endDate - tracker.startDate);
+    }, 0);
+
+    if (dailyTotal >= 86400000) {
+      return res.status(400).json({ 
+        error: "Daily time limit (24h) reached for this task" 
+      });
+    }
+
     const timeTracker = new TimeTracker({
       task: taskId,
       startDate: new Date(),
@@ -38,8 +57,36 @@ const stopTime = async (req, res) => {
     if (!timeTracker) {
       return res.status(404).json({ error: "No active time tracking found" });
     }
+    const newEndDate = new Date();
+    const newDuration = newEndDate - timeTracker.startDate;
 
-    timeTracker.endDate = new Date();
+    const now = new Date();
+    const startOfDay = new Date(now.setHours(0, 0, 0, 0));
+    
+    const dailyTrackers = await TimeTracker.find({
+      task: taskId,
+      endDate: { $exists: true },
+      startDate: { $gte: startOfDay },
+      _id: { $ne: timeTracker._id }
+    });
+
+    const dailyTotal = dailyTrackers.reduce((total, tracker) => {
+      return total + (tracker.endDate - tracker.startDate);
+    }, 0);
+
+    if (dailyTotal + newDuration > 86400000) {
+      const maxAllowedDuration = 86400000 - dailyTotal;
+      
+      timeTracker.endDate = new Date(timeTracker.startDate.getTime() + maxAllowedDuration);
+      
+      await timeTracker.save();
+      return res.json({
+        timeTracker,
+        warning: "Time tracking exceeded 24h daily limit. Entry was adjusted."
+      });
+    }
+
+    timeTracker.endDate = newEndDate;
     await timeTracker.save();
     res.json(timeTracker);
   } catch (error) {

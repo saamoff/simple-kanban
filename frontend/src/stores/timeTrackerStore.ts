@@ -57,6 +57,9 @@ export const useTimeTrackerStore = defineStore('timeTracker', () => {
         await initTaskTracking(taskId)
         return
       }
+      if (error.response?.data?.error === 'Daily time limit (24h) reached for this task') {
+        return
+      }
       throw error
     }
   }
