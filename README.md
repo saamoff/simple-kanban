@@ -76,10 +76,10 @@ Example endpoints:
 - ``POST /api/time-trackers`` – Start/stop time tracking
 
 ## Business Rules 🔒
-✅ Time intervals cannot overlap for the same collaborator
-✅ Tasks must belong to a project
-✅ Passwords stored encrypted (bcryptJS)
-✅ Daily tracked time cannot exceed 24 hours
+- ✅ Time intervals cannot overlap for the same collaborator
+- ✅ Tasks must belong to a project
+- ✅ Passwords stored encrypted (bcryptJS)
+- ✅ Daily tracked time cannot exceed 24 hours
 
 ## License 📜
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
